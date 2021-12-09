@@ -2,6 +2,26 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
+
+#define HEIGHT 500
+#define WIDTH 500
+
+void pause(){
+    int cont = 1;
+    SDL_Event event;
+    while(cont){
+        SDL_WaitEvent(&event);
+        switch(event.type){
+            case SDL_QUIT:
+                cont = 0;
+                break;
+            default:
+                cont = 1;
+        }
+    }
+}
 
 int saveGame(char * saveName, int ** gameBoard, int n, int * score){
     // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargé par la fonction loadGame().
@@ -625,6 +645,17 @@ int startGame(int ** gameBoard, int n, int * play, int * score){
 }
 
 int main(int argc, char ** argv) {
+    // Initialiation de la SDL
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) !=0){
+        fprintf(stderr,"\nUnable to initialize SDL:  %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    //Initialisation de SDL_TTF
+    if(TTF_Init() == -1){
+        fprintf(stderr,"\nUnable to initialize TTF: %s\n", TTF_GetError());
+    }
+
     int n = 4; // Taille du plateau de jeu.
     //(On stock cette valeur dans une variable pour plus de clarté étant donnée qu'elle sera réutilisée souvent dans le code)
 
@@ -693,5 +724,7 @@ int main(int argc, char ** argv) {
 
     free2DTab(gameBoard, n); // On libère l'espace alloué pour le plateau de jeu.
 
-    return 0;
+    TTF_Quit(); // On quitte SDL_TTF
+    SDL_Quit(); // On quitte SDL
+    return EXIT_SUCCESS;
 }
