@@ -8,21 +8,6 @@
 #define HEIGHT 500
 #define WIDTH 500
 
-void pause(){
-    int cont = 1;
-    SDL_Event event;
-    while(cont){
-        SDL_WaitEvent(&event);
-        switch(event.type){
-            case SDL_QUIT:
-                cont = 0;
-                break;
-            default:
-                cont = 1;
-        }
-    }
-}
-
 int saveGame(char * saveName, int ** gameBoard, int n, int * score){
     // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargé par la fonction loadGame().
 
@@ -525,22 +510,38 @@ int continuationOfTheGame(int ** gameBoard, int n){
     return 0; // On retourne 0 si aucune case adjacente n'est identique. Le joueur ne peux plus jouer.
 }
 
-int winGame(int * play, int * score){
+int winGame(int * play, int score){
     // Cette fonction est appelée quand la partie est gagnée.
 
     *play = 0; // Stop la partie
     printf("Félicitation! Vous avez gagné la partie!\n");
-    printf("Vous avez obtenu un score de %i points.\n", *score); // Affichage du score
+    printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
 
     return 0;
 }
 
-int gameOver(int * play, int * score){
+int gameOver(int * play, int score){
     // Cette fonction est appelée quand la partie est perdue.
 
     *play = 0; // Stop la partie
     printf("Game over! Le jeu n'est plus possible.\n");
-    printf("Vous avez obtenu un score de %i points.\n", *score); // Affichage du score
+    printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
+
+    return 0;
+}
+
+int testWinOrGameOver(int win, int * play, int score, int ** gameBoard, int n){
+    /*
+    Si "win" vaut 1 alors la partie est gagnée.
+    Sinon, on teste s'il reste des cases vides sur le gameBoard. Si non, on regarde s'il est possible de continuer le jeu. Si non, game over.
+    */
+    if(win){
+        winGame(play, score);
+        return 1;
+    }else if(!(continuationOfTheGame(gameBoard, n))){
+        gameOver(play, score);
+        return 1;
+    }
 
     return 0;
 }
@@ -557,7 +558,7 @@ int initGameboard(int ** gameBoard, int n){
     gameBoard[0][1] = 1024;
     */
 
-   /*
+    /*
     // Code permettant de tester la situation de défaite.
     int x, y, i;
     i=0;
@@ -572,72 +573,197 @@ int initGameboard(int ** gameBoard, int n){
     return 0;
 }
 
-int startGame(int ** gameBoard, int n, int * play, int * score){
-    // Cette fonction lance la partie.
+int refreshSDLGameBoard(SDL_Surface * ecran, int ** gameBoard, int n, TTF_Font * police){
+    // Ajout des cases
+    int caseX, caseY, x, y;
+    for(caseY=0; caseY<n; caseY++){
+        for(caseX=0; caseX<n; caseX++){
+            if(caseX==0 && caseY==0){
+                // Première case
+                x = 35;
+                y = 35;
+            }else if(caseX==0){
+                // Nouvelle ligne
+                x=35;
+                y+=110;
+            }else{
+                // Nouvelle case de la même ligne
+                x+=110;
+            }
 
-    // On affiche la gameBoard et le score.
-    displayGameBoard(gameBoard, n);
-    printf("Score: %i\n", *score);
+            //Ajout case selon les coordonnées
+            SDL_Surface * rectangle = NULL;
+            rectangle = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
+            if(rectangle == NULL){
+                fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+                exit(EXIT_FAILURE);
+            }
+            SDL_Rect position;
+            position.x=x;
+            position.y=y;
+
+            if(gameBoard[caseY][caseX]==0){
+                // Case vide
+                SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format, 166, 151, 128));
+            }else{
+                SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format, 235, 164, 52));
+            }
+            SDL_BlitSurface(rectangle,NULL,ecran,&position);
+            SDL_FreeSurface(rectangle);
+
+            if(gameBoard[caseY][caseX]!=0){
+                SDL_Color cBlanc= {255,255,255};
+                char string[6];
+                sprintf(string, "%d", gameBoard[caseY][caseX]);
+                SDL_Surface * Texte = TTF_RenderText_Blended(police, string, cBlanc);
+                if(Texte==NULL){
+                    fprintf(stderr,"erreur: %s",TTF_GetError());
+                }
+
+                position.x=x+50;
+                position.y=y+50;
+
+                SDL_BlitSurface(Texte,NULL,ecran,&position);
+                SDL_FreeSurface(Texte);
+            }
+        }
+    }
+
+    SDL_Flip(ecran);
+    return 0;
+}
+
+SDL_Surface * initSDLWindow(){
+    //création de la surface principale
+    SDL_Surface * ecran = NULL ;
+    if((ecran = SDL_SetVideoMode(WIDTH,HEIGHT,32, SDL_HWSURFACE))==NULL){
+        fprintf(stderr,"Erreur VideoMode %s\n",SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    // Légende de la fenêtre
+    SDL_WM_SetCaption("2048",NULL);
+
+    //Remplissage de la fenêtre
+    SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
+
+    SDL_Flip(ecran);
+
+    return ecran;
+}
+
+int initSDLGameBoard(SDL_Surface * ecran, int n){
+    // Suppression du texte
+    SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
+    // Ajout du fond du gameBoard
+    SDL_Surface * rectangle = NULL;
+    rectangle = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+    if(rectangle == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+    SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format,105,91,69));
+    SDL_Rect position;
+    position.x=25;
+    position.y=25;
+    SDL_BlitSurface(rectangle,NULL,ecran,&position);
+    SDL_FreeSurface(rectangle);
+
+    SDL_Flip(ecran);
+    return 0;
+}
+
+int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * police){
+    // Cette fonction lance la partie.
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
 
-    // On demande à l'utilisateur d'entrer une lettre qui correspond à une action.
-    char e;
-    char saveName[24] = "";
-    while(*play){
-        printf("\ng = gauche\nd = droite\nh = haut\nb = bas\n\ns = sauvegarder la partie\nq = quitter la partie (la partie ne sera pas sauvegardée)\n\n--> ");
-        scanf(" %c", &e);
-        if(e == 'd'){
-            rightMove(gameBoard, n, score, &win);
-            // On ajoute une case de valeur 2 ou 4 à la place d'une case vide aléatoire du gameBoard. Si une erreur se produit on retourne -1.
-            if(fillInRandomBox(gameBoard, n, 4) == -1){
-                return -1;
-            }
-        }else if(e == 'g'){
-            leftMove(gameBoard, n, score, &win);
-            if(fillInRandomBox(gameBoard, n, 4) == -1){
-                return -1;
-            }
-        }else if(e == 'h'){
-            upMove(gameBoard, n, score, &win);
-            if(fillInRandomBox(gameBoard, n, 4) == -1){
-                return -1;
-            }
-        }else if(e == 'b'){
-            downMove(gameBoard, n, score, &win);
-            if(fillInRandomBox(gameBoard, n, 4) == -1){
-                return -1;
-            }
-        }else if(e == 's'){
-            // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
-            printf("Nom de la sauvegarde : ");
-            scanf(" %19s", saveName);
-            if(saveGame(saveName, gameBoard, n, score) == 0){
-                printf("\nPartie sauvegardée avec succès\n");
-            }else{
-                printf("Erreur lors de la sauvagarde de la partie.\n");
-            }
-        }else if(e == 'q'){
-            printf("Merci d'avoir joué! À bientôt!\n");
-            return 0; // On renvoie 0 pour quitter la partie.
-        }else{
-            printf("Entrée invalide\n");
-        }
+    initSDLGameBoard(ecran, n);
+    refreshSDLGameBoard(ecran, gameBoard, n, police);
 
-        // On affiche le gameBoard et le score.
-        displayGameBoard(gameBoard, n);
-        printf("Score: %i\n", *score);
-        
-        /*
-        Si "win" vaut 1 alors la partie est gagnée.
-        Sinon, on teste s'il reste des cases vides sur le gameBoard. Si non, on regarde s'il est possible de continuer le jeu. Si non, game over.
-        */
-        if(win){
-            winGame(play, score);
-            return 0;
-        }else if(!(continuationOfTheGame(gameBoard, n))){
-            gameOver(play, score);
-            return 0;
+    char saveName[24] = "";
+    SDL_Event event;
+    while(*play){
+        SDL_WaitEvent(&event);
+        switch(event.type){
+            case SDL_KEYUP:
+                switch(event.key.keysym.sym){
+                    case SDLK_UP:
+                        upMove(gameBoard, n, score, &win);
+                        // On ajoute une case de valeur 2 ou 4 à la place d'une case vide aléatoire du gameBoard. Si une erreur se produit on retourne -1.
+                        if(fillInRandomBox(gameBoard, n, 4) == -1){
+                            return -1;
+                        }
+                        // On test si la partie est gagnée ou perdu ou si elle doit continuer.
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n)==1){
+                            return 0;
+                        }
+                        // On affiche le gameBoard et le score dans le terminale
+                        displayGameBoard(gameBoard, n);
+                        printf("Score: %i\n", *score);
+                        // On affiche le gameBoard sur la fenêtre graphique SDL
+                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        break;
+                    case SDLK_DOWN:
+                        downMove(gameBoard, n, score, &win);
+                        if(fillInRandomBox(gameBoard, n, 4) == -1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n)==1){
+                            return 0;
+                        }
+                        displayGameBoard(gameBoard, n);
+                        printf("Score: %i\n", *score);
+                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        break;
+                    case SDLK_RIGHT:
+                        rightMove(gameBoard, n, score, &win);
+                        if(fillInRandomBox(gameBoard, n, 4) == -1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n)==1){
+                            return 0;
+                        }
+                        displayGameBoard(gameBoard, n);
+                        printf("Score: %i\n", *score);
+                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        break;
+                    case SDLK_LEFT:
+                        leftMove(gameBoard, n, score, &win);
+                        if(fillInRandomBox(gameBoard, n, 4) == -1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n)==1){
+                            return 0;
+                        }
+                        displayGameBoard(gameBoard, n);
+                        printf("Score: %i\n", *score);
+                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        break;
+                    case 's':
+                        // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
+                        printf("Nom de la sauvegarde : ");
+                        scanf(" %19s", saveName);
+                        if(saveGame(saveName, gameBoard, n, score) == 0){
+                            printf("\nPartie sauvegardée avec succès\n");
+                        }else{
+                            printf("Erreur lors de la sauvagarde de la partie.\n");
+                        }
+                        break;
+                    case 'q':
+                        printf("Merci d'avoir joué! À bientôt!\n");
+                        return 0; // On renvoie 0 pour quitter la partie.
+                        break;
+                    default:
+                        *play = 1;
+                }
+                break;
+            case SDL_QUIT:
+                *play = 0;
+                exit(EXIT_SUCCESS);
+                break;
+            default:
+                *play = 1;
         }
     }
 
@@ -651,9 +777,17 @@ int main(int argc, char ** argv) {
         exit(EXIT_FAILURE);
     }
 
-    //Initialisation de SDL_TTF
+    // Initialisation de SDL_TTF
     if(TTF_Init() == -1){
         fprintf(stderr,"\nUnable to initialize TTF: %s\n", TTF_GetError());
+    }
+
+    // Chargement de la police de texte
+    TTF_Font * police = NULL ;
+    police = TTF_OpenFont("fonts/Arial.ttf",20);
+    if(police==NULL){
+        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
+        exit(EXIT_FAILURE);
     }
 
     int n = 4; // Taille du plateau de jeu.
@@ -665,10 +799,58 @@ int main(int argc, char ** argv) {
 
     int score = 0; // Initialisation de la variable de score.
 
-    // On demande si le joueur souhaite commencer une nouvelle partie ou en charger une enregistrée précédemment.
+    SDL_Surface * ecran = initSDLWindow();
+
+    SDL_Color cBlanc= {135, 101, 0};
+    SDL_Surface * Texte = TTF_RenderText_Blended(police, "Appuyez sur N pour demarrer une nouvelle partie!", cBlanc);
+    if(Texte==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+    }
+    SDL_Rect position;
+    position.x=27;
+    position.y=200;
+    SDL_BlitSurface(Texte,NULL,ecran,&position);
+    SDL_FreeSurface(Texte);
+
+    Texte = TTF_RenderText_Blended(police, "Ou appuyez sur L pour charger une partie enregistree!", cBlanc);
+    if(Texte==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+    }
+    position.x=11;
+    position.y=230;
+    SDL_BlitSurface(Texte,NULL,ecran,&position);
+    SDL_FreeSurface(Texte);
+
+    SDL_Flip(ecran);
+
     char choice;
-    printf("n : Commencer une nouvelle partie\nl : Charger une partie enregistrée\n\n--> ");
-    scanf(" %c", &choice);
+    int cont = 1;
+    SDL_Event event;
+    while(cont){
+        SDL_WaitEvent(&event);
+        switch(event.type){
+            case SDL_KEYDOWN:
+                switch(event.key.keysym.sym){
+                    case 'n':
+                        cont = 0;
+                        choice = 'n';
+                        break;
+                    case 'l':
+                        cont = 0;
+                        choice = 'l';
+                        break;
+                    default:
+                        cont = 1;
+                }
+                break;
+            case SDL_QUIT:
+                cont = 0;
+                exit(EXIT_SUCCESS);
+                break;
+            default:
+                cont = 1;
+        }
+    }
 
     if(choice == 'n'){
         /*
@@ -683,7 +865,7 @@ int main(int argc, char ** argv) {
     }else if(choice == 'l'){
         // Si l'utilisateur entre 'l':
 
-        // On demande à l'utilisateur le nom de lauvegarde qu'il souhaite charger.
+        // On demande à l'utilisateur le nom de la sauvegarde qu'il souhaite charger.
         char saveName[24] = "";
         printf("Nom de la sauvegarde à charger : ");
         scanf(" %19s", saveName);
@@ -704,20 +886,12 @@ int main(int argc, char ** argv) {
             free2DTab(gameBoard, n);
             return -1;
         }
-    }else{
-        /*
-        Si l'utilisateur entre un caractère inconnu:
-            On libère l'espace alloué au plateau de jeu et retourne 0 pour mettre fin au programme.
-        */
-        printf("Saisie incorrect.\n");
-        free2DTab(gameBoard, n);
-        return 0;
     }
 
     // On initialise la variable "play" à 1 et on appelle startGame pour lancer la partie.
     // Si une erreur se produit pendant la partie, on libère l'espace alloué au plateau de jeu et retourne -1 pour mettre fin au programme.
     int play = 1;
-    if(startGame(gameBoard, n, &play, &score) == -1){
+    if(startGame(gameBoard, n, &play, &score, ecran, police) == -1){
         free2DTab(gameBoard, n);
         return -1;
     }
