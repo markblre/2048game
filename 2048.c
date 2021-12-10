@@ -5,7 +5,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-#define HEIGHT 500
+#define HEIGHT 575
 #define WIDTH 500
 
 int saveGame(char * saveName, int ** gameBoard, int n, int * score){
@@ -573,66 +573,6 @@ int initGameboard(int ** gameBoard, int n){
     return 0;
 }
 
-int refreshSDLGameBoard(SDL_Surface * ecran, int ** gameBoard, int n, TTF_Font * police){
-    // Ajout des cases
-    int caseX, caseY, x, y;
-    for(caseY=0; caseY<n; caseY++){
-        for(caseX=0; caseX<n; caseX++){
-            if(caseX==0 && caseY==0){
-                // Première case
-                x = 35;
-                y = 35;
-            }else if(caseX==0){
-                // Nouvelle ligne
-                x=35;
-                y+=110;
-            }else{
-                // Nouvelle case de la même ligne
-                x+=110;
-            }
-
-            //Ajout case selon les coordonnées
-            SDL_Surface * rectangle = NULL;
-            rectangle = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
-            if(rectangle == NULL){
-                fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-                exit(EXIT_FAILURE);
-            }
-            SDL_Rect position;
-            position.x=x;
-            position.y=y;
-
-            if(gameBoard[caseY][caseX]==0){
-                // Case vide
-                SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format, 166, 151, 128));
-            }else{
-                SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format, 235, 164, 52));
-            }
-            SDL_BlitSurface(rectangle,NULL,ecran,&position);
-            SDL_FreeSurface(rectangle);
-
-            if(gameBoard[caseY][caseX]!=0){
-                SDL_Color cBlanc= {255,255,255};
-                char string[6];
-                sprintf(string, "%d", gameBoard[caseY][caseX]);
-                SDL_Surface * Texte = TTF_RenderText_Blended(police, string, cBlanc);
-                if(Texte==NULL){
-                    fprintf(stderr,"erreur: %s",TTF_GetError());
-                }
-
-                position.x=x+50;
-                position.y=y+50;
-
-                SDL_BlitSurface(Texte,NULL,ecran,&position);
-                SDL_FreeSurface(Texte);
-            }
-        }
-    }
-
-    SDL_Flip(ecran);
-    return 0;
-}
-
 SDL_Surface * initSDLWindow(){
     //création de la surface principale
     SDL_Surface * ecran = NULL ;
@@ -652,22 +592,137 @@ SDL_Surface * initSDLWindow(){
     return ecran;
 }
 
-int initSDLGameBoard(SDL_Surface * ecran, int n){
-    // Suppression du texte
+int initSDLScreenGame(SDL_Surface * ecran, int n){
+    // Suppression de tout les éléments de la fenêtre
     SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
-    // Ajout du fond du gameBoard
-    SDL_Surface * rectangle = NULL;
-    rectangle = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
-    if(rectangle == NULL){
+
+    // Ajout du fond du score
+    SDL_Surface * scoreBackground = NULL;
+    scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+    if(scoreBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
         exit(EXIT_FAILURE);
     }
-    SDL_FillRect(rectangle,NULL,SDL_MapRGB(rectangle->format,105,91,69));
-    SDL_Rect position;
-    position.x=25;
-    position.y=25;
-    SDL_BlitSurface(rectangle,NULL,ecran,&position);
-    SDL_FreeSurface(rectangle);
+    SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
+    SDL_Rect positionScoreBackground;
+    positionScoreBackground.x=25;
+    positionScoreBackground.y=25;
+    SDL_BlitSurface(scoreBackground,NULL,ecran,&positionScoreBackground);
+    SDL_FreeSurface(scoreBackground);
+
+    // Ajout du fond du gameBoard
+    SDL_Surface * gameBoardBackground = NULL;
+    gameBoardBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+    if(gameBoardBackground == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+    SDL_FillRect(gameBoardBackground,NULL,SDL_MapRGB(gameBoardBackground->format,105,91,69));
+    SDL_Rect positionGameBoardBackground;
+    positionGameBoardBackground.x=25;
+    positionGameBoardBackground.y=100;
+    SDL_BlitSurface(gameBoardBackground,NULL,ecran,&positionGameBoardBackground);
+    SDL_FreeSurface(gameBoardBackground);
+
+    SDL_Flip(ecran);
+    return 0;
+}
+
+int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score, TTF_Font * police){
+    // Mise à jour du score
+    // Suppression de l'ancien score
+    SDL_Surface * scoreBackground = NULL;
+    scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+    if(scoreBackground == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+    SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
+    SDL_Rect positionScoreBackground;
+    positionScoreBackground.x=25;
+    positionScoreBackground.y=25;
+    SDL_BlitSurface(scoreBackground,NULL,ecran,&positionScoreBackground);
+    SDL_FreeSurface(scoreBackground);
+    
+    // Affichage du score actuel
+    SDL_Color cBlanc= {255,255,255};
+    char string[6];
+    sprintf(string, "%d", score);
+    SDL_Surface * Texte = TTF_RenderText_Blended(police, string, cBlanc);
+    if(Texte==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+    }
+    SDL_Rect positonScore;
+    positonScore.x=35;
+    positonScore.y=40;
+    SDL_BlitSurface(Texte,NULL,ecran,&positonScore);
+    SDL_FreeSurface(Texte);
+
+
+    // Mise à jour du gameBoard
+    int caseX, caseY, x, y;
+    for(caseY=0; caseY<n; caseY++){
+        for(caseX=0; caseX<n; caseX++){
+            if(caseX==0 && caseY==0){
+                // Première case
+                x = 35;
+                y = 110;
+            }else if(caseX==0){
+                // Nouvelle ligne
+                x=35;
+                y+=110;
+            }else{
+                // Nouvelle case de la même ligne
+                x+=110;
+            }
+
+            //Ajout case selon les coordonnées
+            SDL_Surface * caseGameBoard = NULL;
+            caseGameBoard = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
+            if(caseGameBoard == NULL){
+                fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+                exit(EXIT_FAILURE);
+            }
+            SDL_Rect positionCase;
+            positionCase.x=x;
+            positionCase.y=y;
+
+            if(gameBoard[caseY][caseX]==0){
+                // Case vide
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 166, 151, 128));
+            }else{
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 235, 164, 52));
+            }
+            SDL_BlitSurface(caseGameBoard,NULL,ecran,&positionCase);
+            SDL_FreeSurface(caseGameBoard);
+
+            // Ajout du nombre dans la case si necessaire
+            if(gameBoard[caseY][caseX]!=0){
+                SDL_Color cBlanc= {255,255,255};
+                char string[6];
+                sprintf(string, "%d", gameBoard[caseY][caseX]);
+                SDL_Surface * Texte = TTF_RenderText_Blended(police, string, cBlanc);
+                if(Texte==NULL){
+                    fprintf(stderr,"erreur: %s",TTF_GetError());
+                }
+                SDL_Rect positionTextCase;
+                if(gameBoard[caseY][caseX]<10){
+                    positionTextCase.x=x+45;
+                }else if(gameBoard[caseY][caseX]<100){
+                    positionTextCase.x=x+38;
+                }else if(gameBoard[caseY][caseX]<1000){
+                    positionTextCase.x=x+32;
+                }else if(gameBoard[caseY][caseX]<10000){
+                    positionTextCase.x=x+27;
+                }else{
+                    positionTextCase.x=x+23;
+                }
+                positionTextCase.y=y+40;
+                SDL_BlitSurface(Texte,NULL,ecran,&positionTextCase);
+                SDL_FreeSurface(Texte);
+            }
+        }
+    }
 
     SDL_Flip(ecran);
     return 0;
@@ -678,8 +733,8 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
 
-    initSDLGameBoard(ecran, n);
-    refreshSDLGameBoard(ecran, gameBoard, n, police);
+    initSDLScreenGame(ecran, n);
+    refreshSDLScreenGame(ecran, gameBoard, n, *score, police);
 
     char saveName[24] = "";
     SDL_Event event;
@@ -702,7 +757,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
                         // On affiche le gameBoard sur la fenêtre graphique SDL
-                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        refreshSDLScreenGame(ecran, gameBoard, n, *score, police);
                         break;
                     case SDLK_DOWN:
                         downMove(gameBoard, n, score, &win);
@@ -714,7 +769,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        refreshSDLScreenGame(ecran, gameBoard, n, *score, police);
                         break;
                     case SDLK_RIGHT:
                         rightMove(gameBoard, n, score, &win);
@@ -726,7 +781,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        refreshSDLScreenGame(ecran, gameBoard, n, *score, police);
                         break;
                     case SDLK_LEFT:
                         leftMove(gameBoard, n, score, &win);
@@ -738,7 +793,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLGameBoard(ecran, gameBoard, n, police);
+                        refreshSDLScreenGame(ecran, gameBoard, n, *score, police);
                         break;
                     case 's':
                         // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
@@ -806,19 +861,20 @@ int main(int argc, char ** argv) {
     if(Texte==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
     }
-    SDL_Rect position;
-    position.x=27;
-    position.y=200;
-    SDL_BlitSurface(Texte,NULL,ecran,&position);
+    SDL_Rect positionText1;
+    positionText1.x=27;
+    positionText1.y=250;
+    SDL_BlitSurface(Texte,NULL,ecran,&positionText1);
     SDL_FreeSurface(Texte);
 
     Texte = TTF_RenderText_Blended(police, "Ou appuyez sur L pour charger une partie enregistree!", cBlanc);
     if(Texte==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
     }
-    position.x=11;
-    position.y=230;
-    SDL_BlitSurface(Texte,NULL,ecran,&position);
+    SDL_Rect positionText2;
+    positionText2.x=9;
+    positionText2.y=280;
+    SDL_BlitSurface(Texte,NULL,ecran,&positionText2);
     SDL_FreeSurface(Texte);
 
     SDL_Flip(ecran);
