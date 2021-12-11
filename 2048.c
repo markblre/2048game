@@ -738,7 +738,7 @@ SDL_Surface * initSDLWindow(){
     return ecran;
 }
 
-int initSDLScreenGame(SDL_Surface * ecran, int n){
+int initSDLScreenGame(SDL_Surface * ecran){
     // Suppression de tout les éléments de la fenêtre
     SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
 
@@ -876,19 +876,109 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
     return 0;
 }
 
+int displaySDLQuitWindow(SDL_Surface * ecran, TTF_Font * police){
+    // Ajout du fond de la fenêtre
+    SDL_Surface * quitWindowBackground = NULL;
+    quitWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 375,150, 32,0,0,0,0);
+    if(quitWindowBackground == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        return -1;
+    }
+    SDL_FillRect(quitWindowBackground,NULL,SDL_MapRGB(quitWindowBackground->format,66,58,44));
+    SDL_Rect positionQuitWindowBackground;
+    positionQuitWindowBackground.x=62;
+    positionQuitWindowBackground.y=250;
+    SDL_BlitSurface(quitWindowBackground,NULL,ecran,&positionQuitWindowBackground);
+    SDL_FreeSurface(quitWindowBackground);
+
+    SDL_Flip(ecran);
+
+    // Ajout du texte "Voulez-vous vraiment quitter?"
+    SDL_Color colorTexte = {255, 255, 255};
+    SDL_Surface * Texte = TTF_RenderText_Blended(police, "Voulez-vous vraiment quitter?", colorTexte);
+    if(Texte==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
+    }
+    SDL_Rect positionTexte;
+    positionTexte.x=117;
+    positionTexte.y=280;
+    SDL_BlitSurface(Texte,NULL,ecran,&positionTexte);
+    SDL_FreeSurface(Texte);
+
+    // Ajout du texte "Appuyez sur Y pour oui ou N pour non."
+    SDL_Color colorTexte2 = {255, 255, 255};
+    SDL_Surface * Texte2 = TTF_RenderText_Blended(police, "Appuyez sur Y pour oui ou N pour non.", colorTexte2);
+    if(Texte2==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
+    }
+    SDL_Rect positionTexte2;
+    positionTexte2.x=75;
+    positionTexte2.y=330;
+    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
+    SDL_FreeSurface(Texte2);
+
+    return 0;
+}
+
+int quitParty(int * play, SDL_Surface * ecran, TTF_Font * police){
+    if(displaySDLQuitWindow(ecran, police)){
+        return -1;
+    }
+    printf("Voulez-vous veaiment quitter la partie? Y/N\n");
+    
+    int cont = 1;
+    SDL_Event event;
+    while(cont){
+        SDL_WaitEvent(&event);
+        switch(event.type){
+            case SDL_KEYDOWN:
+                switch(event.key.keysym.sym){
+                    case 'n':
+                        initSDLScreenGame(ecran);
+                        cont = 0;
+                        return 1;
+                        break;
+                    case 'y':
+                        cont = 0;
+                        *play = 0;
+                        break;
+                    default:
+                        cont = 1;
+                }
+                break;
+            case SDL_QUIT:
+                cont = 0;
+                *play = 0;
+                break;
+            default:
+                cont = 1;
+        }
+    }
+
+    return 0;
+}
+
 int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
     // Cette fonction lance la partie.
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
 
-    if(initSDLScreenGame(ecran, n)==-1){
+    if(initSDLScreenGame(ecran)==-1){
         return -1;
     }
 
+    // On affiche le gameBoard et le score dans le terminale
+    displayGameBoard(gameBoard, n);
+    printf("Score: %i\n", *score);
+
+    // On affiche le gameBoard sur la fenêtre graphique SDL
     if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
         return -1;
     }
 
+    int q;
     char saveName[24] = "";
     SDL_Event event;
     while(*play){
@@ -967,8 +1057,15 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         break;
                     case 'q':
-                        printf("Merci d'avoir joué! À bientôt!\n");
-                        *play=0;
+                        if((q = quitParty(play, ecran, arial20))==1){
+                            displayGameBoard(gameBoard, n);
+                            printf("Score: %i\n", *score);
+                            if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                return -1;
+                            }
+                        }else if(q==-1){
+                            return -1;
+                        }
                         break;
                     default:
                         *play=1;
