@@ -517,7 +517,7 @@ int displaySDLWinWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * aria
     SDL_SetAlpha(winWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
     if(winWindowBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return -1;
     }
     SDL_FillRect(winWindowBackground,NULL,SDL_MapRGB(winWindowBackground->format,255,255,0));
     SDL_Rect positionWinWindowBackground;
@@ -531,6 +531,7 @@ int displaySDLWinWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * aria
     SDL_Surface * Texte = TTF_RenderText_Blended(arialBold35, "Partie gagnee!", colorTexte);
     if(Texte==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
     }
     SDL_Rect positionTexte;
     positionTexte.x=131;
@@ -543,6 +544,7 @@ int displaySDLWinWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * aria
     SDL_Surface * Texte2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTexte2);
     if(Texte2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
     }
     SDL_Rect positionTexte2;
     positionTexte2.x=100;
@@ -561,7 +563,7 @@ int displaySDLGameOverWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font *
     SDL_SetAlpha(winWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
     if(winWindowBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return -1;
     }
     SDL_FillRect(winWindowBackground,NULL,SDL_MapRGB(winWindowBackground->format,255,0,0));
     SDL_Rect positionWinWindowBackground;
@@ -575,6 +577,7 @@ int displaySDLGameOverWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font *
     SDL_Surface * Texte = TTF_RenderText_Blended(arialBold35, "Partie perdue!", colorTexte);
     if(Texte==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
     }
     SDL_Rect positionTexte;
     positionTexte.x=131;
@@ -587,6 +590,7 @@ int displaySDLGameOverWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font *
     SDL_Surface * Texte2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTexte2);
     if(Texte2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
     }
     SDL_Rect positionTexte2;
     positionTexte2.x=100;
@@ -605,7 +609,9 @@ int winGame(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF_
     printf("Félicitation! Vous avez gagné la partie!\n");
     printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
 
-    displaySDLWinWindow(ecran, arial20, arialBold35);
+    if(displaySDLWinWindow(ecran, arial20, arialBold35)==-1){
+        return -1;
+    }
 
     int cont = 1;
     SDL_Event event;
@@ -623,7 +629,6 @@ int winGame(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF_
                 break;
             case SDL_QUIT:
                 cont = 0;
-                exit(EXIT_SUCCESS);
                 break;
             default:
                 cont = 1;
@@ -640,7 +645,9 @@ int gameOver(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF
     printf("Game over! Le jeu n'est plus possible.\n");
     printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
 
-    displaySDLGameOverWindow(ecran, arial20, arialBold35);
+    if(displaySDLGameOverWindow(ecran, arial20, arialBold35)==-1){
+        return -1;
+    }
 
     int cont = 1;
     SDL_Event event;
@@ -658,7 +665,6 @@ int gameOver(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF
                 break;
             case SDL_QUIT:
                 cont = 0;
-                exit(EXIT_SUCCESS);
                 break;
             default:
                 cont = 1;
@@ -674,11 +680,13 @@ int testWinOrGameOver(int win, int * play, int score, int ** gameBoard, int n, S
     Sinon, on teste s'il reste des cases vides sur le gameBoard. Si non, on regarde s'il est possible de continuer le jeu. Si non, game over.
     */
     if(win){
-        winGame(play, score, ecran, arial20, arialBold35);
-        return 1;
+        if(winGame(play, score, ecran, arial20, arialBold35)==-1){
+            return -1;
+        }
     }else if(!(continuationOfTheGame(gameBoard, n))){
-        gameOver(play, score, ecran, arial20, arialBold35);
-        return 1;
+        if(gameOver(play, score, ecran, arial20, arialBold35)==-1){
+            return -1;
+        }
     }
 
     return 0;
@@ -716,7 +724,7 @@ SDL_Surface * initSDLWindow(){
     SDL_Surface * ecran = NULL ;
     if((ecran = SDL_SetVideoMode(WIDTH,HEIGHT,32, SDL_HWSURFACE))==NULL){
         fprintf(stderr,"Erreur VideoMode %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     // Légende de la fenêtre
@@ -739,7 +747,7 @@ int initSDLScreenGame(SDL_Surface * ecran, int n){
     scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
     if(scoreBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return -1;
     }
     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
     SDL_Rect positionScoreBackground;
@@ -753,7 +761,7 @@ int initSDLScreenGame(SDL_Surface * ecran, int n){
     gameBoardBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
     if(gameBoardBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return -1;
     }
     SDL_FillRect(gameBoardBackground,NULL,SDL_MapRGB(gameBoardBackground->format,105,91,69));
     SDL_Rect positionGameBoardBackground;
@@ -773,7 +781,7 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
     scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
     if(scoreBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-        exit(EXIT_FAILURE);
+        return -1;
     }
     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
     SDL_Rect positionScoreBackground;
@@ -789,6 +797,7 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
     SDL_Surface * Texte = TTF_RenderText_Blended(police, string, colorScore);
     if(Texte==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
     }
     SDL_Rect positonScore;
     positonScore.x=35;
@@ -819,7 +828,7 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
             caseGameBoard = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
             if(caseGameBoard == NULL){
                 fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
-                exit(EXIT_FAILURE);
+                return -1;
             }
             SDL_Rect positionCase;
             positionCase.x=x;
@@ -842,6 +851,7 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
                 SDL_Surface * Texte = TTF_RenderText_Blended(police, string, colorTextCase);
                 if(Texte==NULL){
                     fprintf(stderr,"erreur: %s",TTF_GetError());
+                    return -1;
                 }
                 SDL_Rect positionTextCase;
                 if(gameBoard[caseY][caseX]<10){
@@ -871,8 +881,13 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
 
-    initSDLScreenGame(ecran, n);
-    refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20);
+    if(initSDLScreenGame(ecran, n)==-1){
+        return -1;
+    }
+
+    if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+        return -1;
+    }
 
     char saveName[24] = "";
     SDL_Event event;
@@ -891,10 +906,12 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
                         // On affiche le gameBoard sur la fenêtre graphique SDL
-                        refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20);
+                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                            return -1;
+                        }
                         // On test si la partie est gagnée ou perdu ou si elle doit continuer.
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==1){
-                            return 0;
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                            return -1;
                         }
                         break;
                     case SDLK_DOWN:
@@ -904,9 +921,11 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20);
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==1){
-                            return 0;
+                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                            return -1;
                         }
                         break;
                     case SDLK_RIGHT:
@@ -916,9 +935,11 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20);
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==1){
-                            return 0;
+                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                            return -1;
                         }
                         break;
                     case SDLK_LEFT:
@@ -928,9 +949,11 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         }
                         displayGameBoard(gameBoard, n);
                         printf("Score: %i\n", *score);
-                        refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20);
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==1){
-                            return 0;
+                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                            return -1;
+                        }
+                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                            return -1;
                         }
                         break;
                     case 's':
@@ -945,15 +968,14 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                         break;
                     case 'q':
                         printf("Merci d'avoir joué! À bientôt!\n");
-                        return 0; // On renvoie 0 pour quitter la partie.
+                        *play=0;
                         break;
                     default:
-                        *play = 1;
+                        *play=1;
                 }
                 break;
             case SDL_QUIT:
-                *play = 0;
-                exit(EXIT_SUCCESS);
+                *play=0;
                 break;
             default:
                 *play = 1;
@@ -973,6 +995,8 @@ int main(int argc, char ** argv) {
     // Initialisation de SDL_TTF
     if(TTF_Init() == -1){
         fprintf(stderr,"\nUnable to initialize TTF: %s\n", TTF_GetError());
+        SDL_Quit();
+        exit(EXIT_FAILURE);
     }
 
     // Chargement de la police de texte
@@ -980,6 +1004,8 @@ int main(int argc, char ** argv) {
     arial20 = TTF_OpenFont("fonts/Arial.ttf",20);
     if(arial20==NULL){
         fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
         exit(EXIT_FAILURE);
     }
 
@@ -987,6 +1013,8 @@ int main(int argc, char ** argv) {
     arialBold35 = TTF_OpenFont("fonts/Arial Bold.ttf",35);
     if(arialBold35==NULL){
         fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
         exit(EXIT_FAILURE);
     }
 
@@ -995,17 +1023,31 @@ int main(int argc, char ** argv) {
 
     // On créé le plateau de jeu que l'on nommera gameBoard.
     int ** gameBoard = create2DTab(n, n);
-    if(gameBoard == NULL){ return -1; }
+    if(gameBoard == NULL){
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE);
+    }
 
     int score = 0; // Initialisation de la variable de score.
 
     SDL_Surface * ecran = initSDLWindow();
+    if(ecran == NULL){
+        free2DTab(gameBoard, n);
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE); 
+    }
 
     SDL_Color colorTexte= {135, 101, 0};
 
     SDL_Surface * text1 = TTF_RenderText_Blended(arial20, "Appuyez sur N pour demarrer une nouvelle partie!", colorTexte);
     if(text1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        free2DTab(gameBoard, n);
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE);
     }
     SDL_Rect positionText1;
     positionText1.x=27;
@@ -1016,6 +1058,10 @@ int main(int argc, char ** argv) {
     SDL_Surface * text2 = TTF_RenderText_Blended(arial20, "Ou appuyez sur L pour charger une partie enregistree!", colorTexte);
     if(text2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
+        free2DTab(gameBoard, n);
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE);
     }
     SDL_Rect positionText2;
     positionText2.x=9;
@@ -1047,6 +1093,9 @@ int main(int argc, char ** argv) {
                 break;
             case SDL_QUIT:
                 cont = 0;
+                free2DTab(gameBoard, n);
+                TTF_Quit(); // On quitte SDL_TTF
+                SDL_Quit(); // On quitte SDL
                 exit(EXIT_SUCCESS);
                 break;
             default:
@@ -1062,7 +1111,9 @@ int main(int argc, char ** argv) {
         if(initGameboard(gameBoard, n) == -1){
             printf("Erreur lors de l'initialisation du plateau de jeu.\n");
             free2DTab(gameBoard, n);
-            return -1;
+            TTF_Quit(); // On quitte SDL_TTF
+            SDL_Quit(); // On quitte SDL
+            exit(EXIT_FAILURE);
         }
     }else if(choice == 'l'){
         // Si l'utilisateur entre 'l':
@@ -1081,12 +1132,16 @@ int main(int argc, char ** argv) {
             // Si la valeur est 10 alors le nom saisie par l'utilisateur n'est pas correct. On libère l'espace alloué au plateau de jeu et retourne O pour mettre fin au programme.
             printf("Aucune sauvegarde pour le nom saisi.\n");
             free2DTab(gameBoard, n);
-            return 0;
+            TTF_Quit(); // On quitte SDL_TTF
+            SDL_Quit(); // On quitte SDL
+            exit(EXIT_SUCCESS);
         }else if(r == -1){
             // Si la valeur est -A alors une erreur s'est produite. On libère l'espace alloué au plateau de jeu et retourne O pour mettre fin au programme.
             printf("Erreur lors du chargement de la partie.\n");
             free2DTab(gameBoard, n);
-            return -1;
+            TTF_Quit(); // On quitte SDL_TTF
+            SDL_Quit(); // On quitte SDL
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -1095,11 +1150,12 @@ int main(int argc, char ** argv) {
     int play = 1;
     if(startGame(gameBoard, n, &play, &score, ecran, arial20, arialBold35) == -1){
         free2DTab(gameBoard, n);
-        return -1;
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE);
     }
 
     free2DTab(gameBoard, n); // On libère l'espace alloué pour le plateau de jeu.
-
     TTF_Quit(); // On quitte SDL_TTF
     SDL_Quit(); // On quitte SDL
     return EXIT_SUCCESS;
