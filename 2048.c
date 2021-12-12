@@ -5,7 +5,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-#define HEIGHT 575
+#define HEIGHT 625
 #define WIDTH 500
 
 typedef struct chronometre chronometre;
@@ -789,7 +789,7 @@ SDL_Surface * initSDLWindow(){
     return ecran;
 }
 
-int initSDLScreenGame(SDL_Surface * ecran){
+int initSDLScreenGame(SDL_Surface * ecran, TTF_Font * police){
     // Suppression de tout les éléments de la fenêtre
     SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
 
@@ -834,6 +834,32 @@ int initSDLScreenGame(SDL_Surface * ecran){
     positionGameBoardBackground.y=100;
     SDL_BlitSurface(gameBoardBackground,NULL,ecran,&positionGameBoardBackground);
     SDL_FreeSurface(gameBoardBackground);
+
+    // Ajout des indications de commande
+    SDL_Color colorTexte= {50,50,50};
+    // Affichage du texte "Utilisez les flèches directionnelles pour déplacer les cases."
+    SDL_Surface * Texte1 = TTF_RenderText_Blended(police, "Utilisez les fleches directionnelles pour deplacer les cases.", colorTexte);
+    if(Texte1==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
+    }
+    SDL_Rect positionTexte1;
+    positionTexte1.x=35;
+    positionTexte1.y=565;
+    SDL_BlitSurface(Texte1,NULL,ecran,&positionTexte1);
+    SDL_FreeSurface(Texte1);
+
+    // Affichage du texte "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter."
+    SDL_Surface * Texte2 = TTF_RenderText_Blended(police, "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter.", colorTexte);
+    if(Texte2==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
+    }
+    SDL_Rect positionTexte2;
+    positionTexte2.x=35;
+    positionTexte2.y=590;
+    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
+    SDL_FreeSurface(Texte2);
 
     SDL_Flip(ecran);
     return 0;
@@ -1029,8 +1055,8 @@ int displaySDLQuitWindow(SDL_Surface * ecran, TTF_Font * police){
     return 0;
 }
 
-int quitParty(int * play, SDL_Surface * ecran, TTF_Font * police){
-    if(displaySDLQuitWindow(ecran, police)){
+int quitParty(int * play, SDL_Surface * ecran, TTF_Font * arial14, TTF_Font * arial20){
+    if(displaySDLQuitWindow(ecran, arial20)){
         return -1;
     }
     printf("Voulez-vous veaiment quitter la partie? Y/N\n");
@@ -1043,7 +1069,9 @@ int quitParty(int * play, SDL_Surface * ecran, TTF_Font * police){
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym){
                     case 'n':
-                        initSDLScreenGame(ecran);
+                        if(initSDLScreenGame(ecran, arial14)==-1){
+                            return -1;
+                        }
                         cont = 0;
                         return 1;
                         break;
@@ -1067,12 +1095,12 @@ int quitParty(int * play, SDL_Surface * ecran, TTF_Font * police){
     return 0;
 }
 
-int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
+int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial14, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
     // Cette fonction lance la partie.
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
 
-    if(initSDLScreenGame(ecran)==-1){
+    if(initSDLScreenGame(ecran, arial14)==-1){
         return -1;
     }
 
@@ -1173,7 +1201,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                             break;
                         case 'q':
                             stopChrono(chrono);
-                            if((q = quitParty(play, ecran, arial20))==1){
+                            if((q = quitParty(play, ecran, arial14, arial20))==1){
                                 displayGameBoard(gameBoard, n);
                                 printf("Score: %i\n", *score);
                                 if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
@@ -1234,6 +1262,15 @@ int main(int argc, char ** argv) {
     TTF_Font * arialBold35 = NULL ;
     arialBold35 = TTF_OpenFont("fonts/Arial Bold.ttf",35);
     if(arialBold35==NULL){
+        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
+        TTF_Quit(); // On quitte SDL_TTF
+        SDL_Quit(); // On quitte SDL
+        exit(EXIT_FAILURE);
+    }
+
+    TTF_Font * arial14 = NULL ;
+    arial14 = TTF_OpenFont("fonts/Arial Bold.ttf",14);
+    if(arial14==NULL){
         fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
         TTF_Quit(); // On quitte SDL_TTF
         SDL_Quit(); // On quitte SDL
@@ -1374,7 +1411,7 @@ int main(int argc, char ** argv) {
     // On initialise la variable "play" à 1 et on appelle startGame pour lancer la partie.
     // Si une erreur se produit pendant la partie, on libère l'espace alloué au plateau de jeu et retourne -1 pour mettre fin au programme.
     int play = 1;
-    if(startGame(gameBoard, n, &play, &score, ecran, arial20, arialBold35, &chrono) == -1){
+    if(startGame(gameBoard, n, &play, &score, ecran, arial14, arial20, arialBold35, &chrono) == -1){
         free2DTab(gameBoard, n);
         TTF_Quit(); // On quitte SDL_TTF
         SDL_Quit(); // On quitte SDL
