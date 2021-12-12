@@ -8,7 +8,40 @@
 #define HEIGHT 575
 #define WIDTH 500
 
-int saveGame(char * saveName, int ** gameBoard, int n, int * score){
+typedef struct chronometre chronometre;
+struct chronometre{
+    int active, minutes, secondes;
+};
+
+int startChrono(chronometre * chrono){
+    chrono->active = 1;
+    return 0;
+}
+
+int stopChrono(chronometre * chrono){
+    chrono->active = 0;
+    return 0;
+}
+
+int resetChrono(chronometre * chrono){
+    chrono->active = 0;
+    chrono->minutes = 0;
+    chrono->secondes = 0;
+    return 0;
+}
+
+int addSecondChrono(chronometre * chrono){
+    if(chrono->active){
+        chrono->secondes += 1;
+        if(chrono->secondes == 60){
+            chrono->secondes = 0;
+            chrono->minutes += 1;
+        }
+    }
+    return 0;
+}
+
+int saveGame(char * saveName, int ** gameBoard, int n, int * score, chronometre * chrono){
     // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargé par la fonction loadGame().
 
     strcat(saveName, ".txt"); // On ajoute l'extension .txt au nom de la sauvegarde.
@@ -19,6 +52,20 @@ int saveGame(char * saveName, int ** gameBoard, int n, int * score){
 
     // Ecriture du score actuel à la première ligne du fichier texte.
     if(fprintf(file, "%i\n", *score) == -1){
+        // Si erreur, suppression du fichier et renvoie -1.
+        remove(saveName);
+        return -1;
+    }
+
+    // Ecriture des minutes du temps actuel du chronomètre à la deuxième ligne du fichier texte.
+    if(fprintf(file, "%i\n", chrono->minutes) == -1){
+        // Si erreur, suppression du fichier et renvoie -1.
+        remove(saveName);
+        return -1;
+    }
+
+    // Ecriture des secondes du temps actuel du chronomètre à la troisième ligne du fichier texte.
+    if(fprintf(file, "%i\n", chrono->secondes) == -1){
         // Si erreur, suppression du fichier et renvoie -1.
         remove(saveName);
         return -1;
@@ -40,7 +87,7 @@ int saveGame(char * saveName, int ** gameBoard, int n, int * score){
     return 0;
 }
 
-int loadGame(char * saveName, int ** gameBoard, int n, int * score){
+int loadGame(char * saveName, int ** gameBoard, int n, int * score, chronometre * chrono){
     // Cette fonction permet de charger une partie à partir d'un fichier de sauvegarde créé à l'aide de la fonction saveGame().
 
     // Ouverture du fichier de sauvegarde.
@@ -66,6 +113,10 @@ int loadGame(char * saveName, int ** gameBoard, int n, int * score){
         if(*c == '\n'){
             if(line == 0){
                 *score = atoi(buffer);
+            }else if(line == 1){
+                chrono->minutes = atoi(buffer);
+            }else if(line == 2){
+                chrono->secondes = atoi(buffer);
             }else{
                 gameBoard[x%n][y%n] = atoi(buffer);
                 y++;
@@ -756,6 +807,20 @@ int initSDLScreenGame(SDL_Surface * ecran){
     SDL_BlitSurface(scoreBackground,NULL,ecran,&positionScoreBackground);
     SDL_FreeSurface(scoreBackground);
 
+    // Ajout du fond du chronomètre
+    SDL_Surface * chronoBackground = NULL;
+    chronoBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+    if(chronoBackground == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        return -1;
+    }
+    SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
+    SDL_Rect positionChronoBackground;
+    positionChronoBackground.x=350;
+    positionChronoBackground.y=25;
+    SDL_BlitSurface(chronoBackground,NULL,ecran,&positionChronoBackground);
+    SDL_FreeSurface(chronoBackground);
+
     // Ajout du fond du gameBoard
     SDL_Surface * gameBoardBackground = NULL;
     gameBoardBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
@@ -876,6 +941,48 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
     return 0;
 }
 
+int refreshSDLChrono(SDL_Surface * ecran, chronometre * chrono, TTF_Font * police){
+    // Suppression du chronomètre affiché précédemment
+    SDL_Surface * chronoBackground = NULL;
+    chronoBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+    if(chronoBackground == NULL){
+        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
+        return -1;
+    }
+    SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
+    SDL_Rect positionChronoBackground;
+    positionChronoBackground.x=350;
+    positionChronoBackground.y=25;
+    SDL_BlitSurface(chronoBackground,NULL,ecran,&positionChronoBackground);
+    SDL_FreeSurface(chronoBackground);
+
+    // Affichage du score actuel
+    SDL_Color colorChrono= {255,255,255};
+    char strSecondes[3];
+    char strTime[10];
+    if(chrono->secondes<10){
+        sprintf(strSecondes, "0%d", chrono->secondes);
+    }else{
+        sprintf(strSecondes, "%d", chrono->secondes);
+    }
+    sprintf(strTime, "%d", chrono->minutes);
+    strcat(strTime, ":");
+    strcat(strTime, strSecondes);
+    SDL_Surface * Texte = TTF_RenderText_Blended(police, strTime, colorChrono);
+    if(Texte==NULL){
+        fprintf(stderr,"erreur: %s",TTF_GetError());
+        return -1;
+    }
+    SDL_Rect positionChrono;
+    positionChrono.x=360;
+    positionChrono.y=40;
+    SDL_BlitSurface(Texte,NULL,ecran,&positionChrono);
+    SDL_FreeSurface(Texte);
+
+    SDL_Flip(ecran);
+    return 0;
+}
+
 int displaySDLQuitWindow(SDL_Surface * ecran, TTF_Font * police){
     // Ajout du fond de la fenêtre
     SDL_Surface * quitWindowBackground = NULL;
@@ -960,7 +1067,7 @@ int quitParty(int * play, SDL_Surface * ecran, TTF_Font * police){
     return 0;
 }
 
-int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
+int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
     // Cette fonction lance la partie.
 
     int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
@@ -978,104 +1085,122 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
         return -1;
     }
 
+    // Lancement du chronomètre
+    startChrono(chrono);
+    time_t timeStart, timeEnd;
+    timeStart = time(NULL);
+
     int q;
     char saveName[24] = "";
     SDL_Event event;
     while(*play){
-        SDL_WaitEvent(&event);
-        switch(event.type){
-            case SDL_KEYUP:
-                switch(event.key.keysym.sym){
-                    case SDLK_UP:
-                        upMove(gameBoard, n, score, &win);
-                        // On ajoute une case de valeur 2 ou 4 à la place d'une case vide aléatoire du gameBoard. Si une erreur se produit on retourne -1.
-                        if(fillInRandomBox(gameBoard, n, 4) == -1){
-                            return -1;
-                        }
-                        // On affiche le gameBoard et le score dans le terminale
-                        displayGameBoard(gameBoard, n);
-                        printf("Score: %i\n", *score);
-                        // On affiche le gameBoard sur la fenêtre graphique SDL
-                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
-                            return -1;
-                        }
-                        // On test si la partie est gagnée ou perdu ou si elle doit continuer.
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
-                            return -1;
-                        }
-                        break;
-                    case SDLK_DOWN:
-                        downMove(gameBoard, n, score, &win);
-                        if(fillInRandomBox(gameBoard, n, 4) == -1){
-                            return -1;
-                        }
-                        displayGameBoard(gameBoard, n);
-                        printf("Score: %i\n", *score);
-                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
-                            return -1;
-                        }
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
-                            return -1;
-                        }
-                        break;
-                    case SDLK_RIGHT:
-                        rightMove(gameBoard, n, score, &win);
-                        if(fillInRandomBox(gameBoard, n, 4) == -1){
-                            return -1;
-                        }
-                        displayGameBoard(gameBoard, n);
-                        printf("Score: %i\n", *score);
-                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
-                            return -1;
-                        }
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
-                            return -1;
-                        }
-                        break;
-                    case SDLK_LEFT:
-                        leftMove(gameBoard, n, score, &win);
-                        if(fillInRandomBox(gameBoard, n, 4) == -1){
-                            return -1;
-                        }
-                        displayGameBoard(gameBoard, n);
-                        printf("Score: %i\n", *score);
-                        if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
-                            return -1;
-                        }
-                        if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
-                            return -1;
-                        }
-                        break;
-                    case 's':
-                        // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
-                        printf("Nom de la sauvegarde : ");
-                        scanf(" %19s", saveName);
-                        if(saveGame(saveName, gameBoard, n, score) == 0){
-                            printf("\nPartie sauvegardée avec succès\n");
-                        }else{
-                            printf("Erreur lors de la sauvagarde de la partie.\n");
-                        }
-                        break;
-                    case 'q':
-                        if((q = quitParty(play, ecran, arial20))==1){
+        SDL_Delay(100);
+        while(SDL_PollEvent(&event)){
+            switch(event.type){
+                case SDL_KEYUP:
+                    switch(event.key.keysym.sym){
+                        case SDLK_UP:
+                            upMove(gameBoard, n, score, &win);
+                            // On ajoute une case de valeur 2 ou 4 à la place d'une case vide aléatoire du gameBoard. Si une erreur se produit on retourne -1.
+                            if(fillInRandomBox(gameBoard, n, 4) == -1){
+                                return -1;
+                            }
+                            // On affiche le gameBoard et le score dans le terminale
+                            displayGameBoard(gameBoard, n);
+                            printf("Score: %i\n", *score);
+                            // On affiche le gameBoard sur la fenêtre graphique SDL
+                            if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                return -1;
+                            }
+                            // On test si la partie est gagnée ou perdu ou si elle doit continuer.
+                            if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                                return -1;
+                            }
+                            break;
+                        case SDLK_DOWN:
+                            downMove(gameBoard, n, score, &win);
+                            if(fillInRandomBox(gameBoard, n, 4) == -1){
+                                return -1;
+                            }
                             displayGameBoard(gameBoard, n);
                             printf("Score: %i\n", *score);
                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
                                 return -1;
                             }
-                        }else if(q==-1){
-                            return -1;
-                        }
-                        break;
-                    default:
-                        *play=1;
-                }
-                break;
-            case SDL_QUIT:
-                *play=0;
-                break;
-            default:
-                *play = 1;
+                            if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                                return -1;
+                            }
+                            break;
+                        case SDLK_RIGHT:
+                            rightMove(gameBoard, n, score, &win);
+                            if(fillInRandomBox(gameBoard, n, 4) == -1){
+                                return -1;
+                            }
+                            displayGameBoard(gameBoard, n);
+                            printf("Score: %i\n", *score);
+                            if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                return -1;
+                            }
+                            if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                                return -1;
+                            }
+                            break;
+                        case SDLK_LEFT:
+                            leftMove(gameBoard, n, score, &win);
+                            if(fillInRandomBox(gameBoard, n, 4) == -1){
+                                return -1;
+                            }
+                            displayGameBoard(gameBoard, n);
+                            printf("Score: %i\n", *score);
+                            if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                return -1;
+                            }
+                            if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
+                                return -1;
+                            }
+                            break;
+                        case 's':
+                            stopChrono(chrono);
+                            // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
+                            printf("Nom de la sauvegarde : ");
+                            scanf(" %19s", saveName);
+                            if(saveGame(saveName, gameBoard, n, score, chrono) == 0){
+                                printf("\nPartie sauvegardée avec succès\n");
+                            }else{
+                                printf("Erreur lors de la sauvagarde de la partie.\n");
+                            }
+                            startChrono(chrono);
+                            break;
+                        case 'q':
+                            stopChrono(chrono);
+                            if((q = quitParty(play, ecran, arial20))==1){
+                                displayGameBoard(gameBoard, n);
+                                printf("Score: %i\n", *score);
+                                if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                    return -1;
+                                }
+                            }else if(q==-1){
+                                return -1;
+                            }
+                            startChrono(chrono);
+                            break;
+                        default:
+                            *play=1;
+                    }
+                    break;
+                case SDL_QUIT:
+                    *play=0;
+                    break;
+                default:
+                    *play = 1;
+            }
+        }
+
+        timeEnd = time(NULL);
+        if(difftime(timeEnd, timeStart)>0){
+            addSecondChrono(chrono);
+            timeStart = time(NULL);
+            refreshSDLChrono(ecran, chrono, arial20);
         }
     }
 
@@ -1200,6 +1325,10 @@ int main(int argc, char ** argv) {
         }
     }
 
+    // Initialisation du chronomètre
+    struct chronometre chrono;
+    resetChrono(&chrono);
+
     if(choice == 'n'){
         /*
         Si l'utilisateur entre 'n':
@@ -1222,7 +1351,7 @@ int main(int argc, char ** argv) {
 
         strcat(saveName, ".txt"); // On ajoute l'xtension ".txt" à la fin du nom
 
-        int r = loadGame(saveName, gameBoard, n, &score); // On appelle la fonction "loadGame" et on affecte la valeur retournée par la fonction à r
+        int r = loadGame(saveName, gameBoard, n, &score, &chrono); // On appelle la fonction "loadGame" et on affecte la valeur retournée par la fonction à r
 
         // On traite la valeur retournée par loadGame
         if(r == 10){
@@ -1245,7 +1374,7 @@ int main(int argc, char ** argv) {
     // On initialise la variable "play" à 1 et on appelle startGame pour lancer la partie.
     // Si une erreur se produit pendant la partie, on libère l'espace alloué au plateau de jeu et retourne -1 pour mettre fin au programme.
     int play = 1;
-    if(startGame(gameBoard, n, &play, &score, ecran, arial20, arialBold35) == -1){
+    if(startGame(gameBoard, n, &play, &score, ecran, arial20, arialBold35, &chrono) == -1){
         free2DTab(gameBoard, n);
         TTF_Quit(); // On quitte SDL_TTF
         SDL_Quit(); // On quitte SDL
