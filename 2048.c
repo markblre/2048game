@@ -285,56 +285,51 @@ int rightMove(int ** gameBoard, int n, int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers la droite en effectuant la fusion des cases adjacentes horizontalement de même valeur.
 
     // On traite le gameBoard ligne par ligne.
-    int x, y, t;
-    for(x=0; x<n; x++){
+    int x, y, t, stop;
+    for(y=0; y<n; y++){
         /*
         On affecte à t la valeur n-1. La variable t désignera la case vide la plus à droite de la ligne.
+        On affecte à stop la valeur n. Cette variable nous servira à ne pas fusionner 2 fois une même case dans un même mouvement. La valeur n signifie qu'aucune case n'a été fusionnée.
         On traite la ligne de la dernière case à la première.
             Si la case traitée possède une valeur non nulle:
-                Si la case traitée n'est pas la case de coordonnées [x][t]:
-                    - on affecte a la case de coordonnée [x][t] la valeur de la case traitée.
-                    - on assigne à la case traité la valeur 0.
-                On soustrait 1 à t car la case n'est pas nulle est donc ne doit pas être changée.
+                Si la case traitée n'est pas la case vide la plus à droite de la ligne:
+                    On déplace la case traitée à la place de la case vide la plus à droite de la ligne.
+                Si la case que l'on vient de déplacer n'est pas la dernière case de la ligne:
+                    Si la case à droite de la case déplacée est de même valeur et qu'elle n'a pas déjà été fusionné lors de ce mouvement:
+                        On multiplie la valeur de la case à droite par 2
+                        On mets la valeur de la case déplacée à 0
+                        On incrémente le score
+                        On vérifie si la partie est gagnée
+                        On affecte à stop la valeur t+1 qui signifie que cette case a été fusionnée et ne doit plus l'être
+                    Sinon:
+                        On soustrait 1 à t pour modifier les coordonnées de la case vide la plus à droite de la ligne.
+                Sinon:
+                    On soustrait 1 à t pour modifier les coordonnées de la case vide la plus à droite de la ligne.
         */
         t = n-1;
-        for(y=n-1; y>=0; y--){
-            if(gameBoard[x][y] != 0){
-                if(y!=t){
-                    gameBoard[x][t] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
+        stop = n;
+        for(x=n-1; x>=0; x--){
+            if(gameBoard[y][x] != 0){
+                if(x!=t){
+                    gameBoard[y][t] = gameBoard[y][x];
+                    gameBoard[y][x] = 0;
                 }
-                t--;
-            }
-        }
-
-        /*
-        On traite la ligne de la dernière case à la deuxième.
-        Pour chaque case traitée on vérifie si la case à gauche de celle-ci est de valeur égale non nulle.
-            Si oui, on multiplie la case traitée par 2 et on rend nulle l'autre case. On incrémente également le score et on vérifie si le jeu est gagné ou non.
-            Sinon on ne fait rien.
-        */
-        for(y=n-1; y>0; y--){
-            if(gameBoard[x][y] == gameBoard[x][y-1] && gameBoard[x][y] != 0){
-                gameBoard[x][y] *= 2;
-                gameBoard[x][y-1] = 0;
-                *score += gameBoard[x][y]; // On ajoute au score la valeur calculée pour la case traitée.
-                // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
-                if(gameBoard[x][y]==2048){
-                    *win = 1;
+                if(t!=(n-1)){
+                    if(gameBoard[y][t] == gameBoard[y][t+1] && (t+1)<stop){
+                        gameBoard[y][t+1] *= 2;
+                        gameBoard[y][t] = 0;
+                        *score += gameBoard[y][t+1]; // On ajoute au score la valeur calculée pour la case traitée.
+                        // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
+                        if(gameBoard[y][t+1]==2048){
+                            *win = 1;
+                        }
+                        stop = t+1;
+                    }else{
+                        t--;
+                    }
+                }else{
+                    t--;
                 }
-                y--; // Il est inutile de traiter la case de gauche si elle vient d'être fusionnée avec l'actuelle.
-            }
-        }
-
-        // Ce block est identique au premier. Il est nécessaire de le refaire car la phase de "fusion" créé des espaces lorsque des cases sont fusionnées.
-        t = n-1;
-        for(y=n-1; y>=0; y--){
-            if(gameBoard[x][y] != 0){
-                if(y!=t){
-                    gameBoard[x][t] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
-                }
-                t--;
             }
         }
     }
@@ -346,56 +341,51 @@ int leftMove(int ** gameBoard, int n, int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers la gauche en effectuant la fusion des cases adjacentes horizontalement de même valeur.
 
     // On traite le gameBoard ligne par ligne.
-    int x, y, t;
-    for(x=0; x<n; x++){
+    int x, y, t, stop;
+    for(y=0; y<n; y++){
         /*
         On affecte à t la valeur 0. La variable t désignera la case vide la plus à gauche de la ligne.
+        On affecte à stop la valeur -1. Cette variable nous servira à ne pas fusionner 2 fois une même case dans un même mouvement. La valeur -1 signifie qu'aucune case n'a été fusionnée.
         On traite la ligne de la première case à la dernière.
             Si la case traitée possède une valeur non nulle:
-                Si la case traitée n'est pas la case de coordonnées [x][t]:
-                    - on affecte a la case de coordonnée [x][t] la valeur de la case traitée.
-                    - on assigne à la case traité la valeur 0.
-                On ajoute 1 à t car la case n'est pas nulle est donc ne doit pas être changée.
+                Si la case traitée n'est pas la case vide la plus à gauche de la ligne:
+                    On déplace la case traitée à la place de la case vide la plus à gauche de la ligne.
+                Si la case que l'on vient de déplacer n'est pas la première case de la ligne:
+                    Si la case à droite de la case déplacée est de même valeur et qu'elle n'a pas déjà été fusionné lors de ce mouvement:
+                        On multiplie la valeur de la case à gauche par 2
+                        On mets la valeur de la case déplacée à 0
+                        On incrémente le score
+                        On vérifie si la partie est gagnée
+                        On affecte à stop la valeur t-1 qui signifie que cette case a été fusionnée et ne doit plus l'être
+                    Sinon:
+                        On ajoute 1 à t pour modifier les coordonnées de la case vide la plus à gauche de la ligne.
+                Sinon:
+                    On ajoute 1 à t pour modifier les coordonnées de la case vide la plus à gauche de la ligne.
         */
         t = 0;
-        for(y=0; y<n; y++){
-            if(gameBoard[x][y] != 0){
-                if(y!=t){
-                    gameBoard[x][t] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
+        stop = -1;
+        for(x=0; x<n; x++){
+            if(gameBoard[y][x] != 0){
+                if(x!=t){
+                    gameBoard[y][t] = gameBoard[y][x];
+                    gameBoard[y][x] = 0;
                 }
-                t++;
-            }
-        }
-
-        /*
-        On traite la ligne de la première case à l'avant dernière.
-        Pour chaque case traitée on vérifie si la case à droite de celle-ci est de valeur égale non nulle.
-            Si oui, on multiplie la case traitée par 2 et on rend nulle l'autre case. On incrémente également le score et on vérifie si le jeu est gagné ou non.
-            Sinon on ne fait rien.
-        */
-        for(y=0; y<n-1; y++){
-            if(gameBoard[x][y] == gameBoard[x][y+1] && gameBoard[x][y] != 0){
-                gameBoard[x][y] *= 2;
-                gameBoard[x][y+1] = 0;
-                *score += gameBoard[x][y]; // On ajoute au score la valeur calculée pour la case traitée.
-                // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
-                if(gameBoard[x][y]==2048){
-                    *win = 1;
+                if(t!=0){
+                    if(gameBoard[y][t] == gameBoard[y][t-1] && (t-1)>stop){
+                        gameBoard[y][t-1] *= 2;
+                        gameBoard[y][t] = 0;
+                        *score += gameBoard[y][t-1]; // On ajoute au score la valeur calculée pour la case traitée.
+                        // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
+                        if(gameBoard[y][t-1]==2048){
+                            *win = 1;
+                        }
+                        stop = t-1;
+                    }else{
+                        t++;
+                    }
+                }else{
+                    t++;
                 }
-                y++; // Il est inutile de traiter la case de droite si elle vient d'être fusionnée avec l'actuelle.
-            }
-        }
-
-        // Ce block est identique au premier. Il est nécessaire de le refaire car la phase de "fusion" créé des espaces lorsque des cases sont fusionnées.
-        t = 0;
-        for(y=0; y<n; y++){
-            if(gameBoard[x][y] != 0){
-                if(y!=t){
-                    gameBoard[x][t] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
-                }
-                t++;
             }
         }
     }
@@ -404,59 +394,54 @@ int leftMove(int ** gameBoard, int n, int * score, int * win){
 }
 
 int upMove(int ** gameBoard, int n, int * score, int * win){
-    // Cette fonction déplace toutes les cases du gameBoard vers le haut en effectuant la fusion des cases adjacentes verticalement de même valeur.
+    // Cette fonction déplace toutes les cases du gameBoard vers le haut en effectuant la fusion des cases adjacentes verticalements de même valeur.
 
     // On traite le gameBoard colonne par colonne.
-    int x, y, t;
-    for(y=0; y<n; y++){
+    int x, y, t, stop;
+    for(x=0; x<n; x++){
         /*
         On affecte à t la valeur 0. La variable t désignera la case vide la plus haute de la colonne.
+        On affecte à stop la valeur -1. Cette variable nous servira à ne pas fusionner 2 fois une même case dans un même mouvement. La valeur -1 signifie qu'aucune case n'a été fusionnée.
         On traite la colonne de la première case à la dernière.
             Si la case traitée possède une valeur non nulle:
-                Si la case traitée n'est pas la case de coordonnées [x][t]:
-                    - on affecte a la case de coordonnée [x][t] la valeur de la case traitée.
-                    - on assigne à la case traité la valeur 0.
-                On ajoute 1 à t car la case n'est pas nulle est donc ne doit pas être changée.
+                Si la case traitée n'est pas la case vide la plus haute de la colonne:
+                    On déplace la case traitée à la place de la case vide la plus haute de la colonne.
+                Si la case que l'on vient de déplacer n'est pas la première case de la colonne:
+                    Si la case au dessus de la case déplacée est de même valeur et qu'elle n'a pas déjà été fusionné lors de ce mouvement:
+                        On multiplie la valeur de la case au dessus par 2
+                        On mets la valeur de la case déplacée à 0
+                        On incrémente le score
+                        On vérifie si la partie est gagnée
+                        On affecte à stop la valeur t-1 qui signifie que cette case a été fusionnée et ne doit plus l'être
+                    Sinon:
+                        On ajoute 1 à t pour modifier les coordonnées de la case vide la plus haute de la colonne.
+                Sinon:
+                    On ajoute 1 à t pour modifier les coordonnées de la case vide la plus haute de la colonne.
         */
         t = 0;
-        for(x=0; x<n; x++){
-            if(gameBoard[x][y] != 0){
-                if(x!=t){
-                    gameBoard[t][y] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
+        stop = -1;
+        for(y=0; y<n; y++){
+            if(gameBoard[y][x] != 0){
+                if(y!=t){
+                    gameBoard[t][x] = gameBoard[y][x];
+                    gameBoard[y][x] = 0;
                 }
-                t++;
-            }
-        }
-
-        /*
-        On traite la colonne de la première case à l'avant dernière.
-        Pour chaque case traitée on vérifie si la case en dessous de celle-ci est de valeur égale non nulle.
-            Si oui, on multiplie la case traitée par 2 et on rend nulle l'autre case. On incrémente également le score et on vérifie si le jeu est gagné ou non.
-            Sinon on ne fait rien.
-        */
-        for(x=0; x<n-1; x++){
-            if(gameBoard[x][y] == gameBoard[x+1][y] && gameBoard[x][y] != 0){
-                gameBoard[x][y] *= 2;
-                gameBoard[x+1][y] = 0;
-                *score += gameBoard[x][y]; // On ajoute au score la valeur calculée pour la case traitée.
-                // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
-                if(gameBoard[x][y]==2048){
-                    *win = 1;
+                if(t!=0){
+                    if(gameBoard[t][x] == gameBoard[t-1][x] && (t-1)>stop){
+                        gameBoard[t-1][x] *= 2;
+                        gameBoard[t][x] = 0;
+                        *score += gameBoard[t-1][x]; // On ajoute au score la valeur calculée pour la case traitée.
+                        // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
+                        if(gameBoard[t-1][y]==2048){
+                            *win = 1;
+                        }
+                        stop = t-1;
+                    }else{
+                        t++;
+                    }
+                }else{
+                    t++;
                 }
-                x++; // Il est inutile de traiter la case en dessous si elle vient d'être fusionnée avec l'actuelle.
-            }
-        }
-
-        // Ce block est identique au premier. Il est nécessaire de le refaire car la phase de "fusion" créé des espaces lorsque des cases sont fusionnées.
-        t = 0;
-        for(x=0; x<n; x++){
-            if(gameBoard[x][y] != 0){
-                if(x!=t){
-                    gameBoard[t][y] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
-                }
-                t++;
             }
         }
     }
@@ -465,59 +450,54 @@ int upMove(int ** gameBoard, int n, int * score, int * win){
 }
 
 int downMove(int ** gameBoard, int n, int * score, int * win){
-    // Cette fonction déplace toutes les cases du gameBoard vers le bas en effectuant la fusion des cases adjacentes verticalement de même valeur.
+    // Cette fonction déplace toutes les cases du gameBoard vers le haut en effectuant la fusion des cases adjacentes verticalements de même valeur.
 
     // On traite le gameBoard colonne par colonne.
-    int x, y, t;
-    for(y=0; y<n; y++){
+    int x, y, t, stop;
+    for(x=0; x<n; x++){
         /*
-        On affecte à t la valeur n-1. La variable t désignera la case vide la plus basse de la colonne.
+        On affecte à t la valeur n-1. La variable t désignera la case vide la plus haute de la colonne.
+        On affecte à stop la valeur n. Cette variable nous servira à ne pas fusionner 2 fois une même case dans un même mouvement. La valeur n signifie qu'aucune case n'a été fusionnée.
         On traite la colonne de la dernière case à la première.
             Si la case traitée possède une valeur non nulle:
-                Si la case traitée n'est pas la case de coordonnées [x][t]:
-                    - on affecte a la case de coordonnée [x][t] la valeur de la case traitée.
-                    - on assigne à la case traité la valeur 0.
-                On ajoute 1 à t car la case n'est pas nulle est donc ne doit pas être changée.
+                Si la case traitée n'est pas la case vide la plus basse de la colonne:
+                    On déplace la case traitée à la place de la case vide la plus basse de la colonne.
+                Si la case que l'on vient de déplacer n'est pas la dernière case de la colonne:
+                    Si la case du dessous de la case déplacée est de même valeur et qu'elle n'a pas déjà été fusionné lors de ce mouvement:
+                        On multiplie la valeur de la case du dessous par 2
+                        On mets la valeur de la case déplacée à 0
+                        On incrémente le score
+                        On vérifie si la partie est gagnée
+                        On affecte à stop la valeur t+1 qui signifie que cette case a été fusionnée et ne doit plus l'être
+                    Sinon:
+                        On soustrait 1 à t pour modifier les coordonnées de la case vide la plus basse de la colonne.
+                Sinon:
+                    On soustrait 1 à t pour modifier les coordonnées de la case vide la plus basse de la colonne.
         */
         t = n-1;
-        for(x=n-1; x>=0; x--){
-            if(gameBoard[x][y] != 0){
-                if(x!=t){
-                    gameBoard[t][y] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
+        stop = n;
+        for(y=n-1; y>=0; y--){
+            if(gameBoard[y][x] != 0){
+                if(y!=t){
+                    gameBoard[t][x] = gameBoard[y][x];
+                    gameBoard[y][x] = 0;
                 }
-                t--;
-            }
-        }
-
-        /*
-        On traite la colonne de la dernière case à la deuxième.
-        Pour chaque case traitée on vérifie si la case au dessus de celle-ci est de valeur égale non nulle.
-            Si oui, on multiplie la case traitée par 2 et on rend nulle l'autre case. On incrémente également le score et on vérifie si le jeu est gagné ou non.
-            Sinon on ne fait rien.
-        */
-        for(x=n-1; x>0; x--){
-            if(gameBoard[x][y] == gameBoard[x-1][y] && gameBoard[x][y] != 0){
-                gameBoard[x][y] *= 2;
-                gameBoard[x-1][y] = 0;
-                *score += gameBoard[x][y]; // On ajoute au score la valeur calculée pour la case traitée.
-                // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
-                if(gameBoard[x][y]==2048){
-                    *win = 1;
+                if(t!=(n-1)){
+                    if(gameBoard[t][x] == gameBoard[t+1][x] && (t+1)<stop){
+                        gameBoard[t+1][x] *= 2;
+                        gameBoard[t][x] = 0;
+                        *score += gameBoard[t+1][x]; // On ajoute au score la valeur calculée pour la case traitée.
+                        // On teste si la nouvelle case vaut 2048. Si oui, la variable win est passée à 1.
+                        if(gameBoard[t+1][y]==2048){
+                            *win = 1;
+                        }
+                        stop = t+1;
+                    }else{
+                        t--;
+                    }
+                }else{
+                    t--;
                 }
-                x--; // Il est inutile de traiter la case au dessus si elle vient d'être fusionnée avec l'actuelle.
-            }
-        }
-
-        // Ce block est identique au premier. Il est nécessaire de le refaire car la phase de "fusion" créé des espaces lorsque des cases sont fusionnées.
-        t = n-1;
-        for(x=n-1; x>=0; x--){
-            if(gameBoard[x][y] != 0){
-                if(x!=t){
-                    gameBoard[t][y] = gameBoard[x][y];
-                    gameBoard[x][y] = 0;
-                }
-                t--;
             }
         }
     }
