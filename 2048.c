@@ -917,18 +917,45 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
             positionCase.x=x;
             positionCase.y=y;
 
+            SDL_Color colorTextCase = {255,255,255};
+
             if(gameBoard[caseY][caseX]==0){
                 // Case vide
                 SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 166, 151, 128));
-            }else{
-                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 235, 164, 52));
+            }else if(gameBoard[caseY][caseX]==2){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 238, 228, 218));
+                colorTextCase.r = 75;
+                colorTextCase.g = 75;
+                colorTextCase.b = 75;
+            }else if(gameBoard[caseY][caseX]==4){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 236, 224, 199));
+                colorTextCase.r = 75;
+                colorTextCase.g = 75;
+                colorTextCase.b = 75;
+            }else if(gameBoard[caseY][caseX]==8){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 242, 177, 120));
+            }else if(gameBoard[caseY][caseX]==16){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 245, 149, 99));
+            }else if(gameBoard[caseY][caseX]==32){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 245, 124, 96));
+            }else if(gameBoard[caseY][caseX]==64){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 228, 107, 77));
+            }else if(gameBoard[caseY][caseX]==128){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 234, 204, 121));
+            }else if(gameBoard[caseY][caseX]==256){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 236, 202, 97));
+            }else if(gameBoard[caseY][caseX]==512){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 233, 197, 91));
+            }else if(gameBoard[caseY][caseX]==1024){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 236, 198, 3));
+            }else if(gameBoard[caseY][caseX]==2048){
+                SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 231, 191, 67));
             }
             SDL_BlitSurface(caseGameBoard,NULL,ecran,&positionCase);
             SDL_FreeSurface(caseGameBoard);
 
             // Ajout du nombre dans la case si necessaire
             if(gameBoard[caseY][caseX]!=0){
-                SDL_Color colorTextCase= {255,255,255};
                 char string[6];
                 sprintf(string, "%d", gameBoard[caseY][caseX]);
                 SDL_Surface * Texte = TTF_RenderText_Blended(police, string, colorTextCase);
