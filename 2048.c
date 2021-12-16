@@ -14,16 +14,19 @@ struct chronometre{
 };
 
 int startChrono(chronometre * chrono){
+    // Lancement du chronomètre.
     chrono->active = 1;
     return 0;
 }
 
 int stopChrono(chronometre * chrono){
+    // Arrêt du chronomètre.
     chrono->active = 0;
     return 0;
 }
 
 int resetChrono(chronometre * chrono){
+    // Réinitalisation du chronomètre.
     chrono->active = 0;
     chrono->minutes = 0;
     chrono->secondes = 0;
@@ -31,6 +34,7 @@ int resetChrono(chronometre * chrono){
 }
 
 int addSecondChrono(chronometre * chrono){
+    // Ajout d'une seconde au chronomètre.
     if(chrono->active){
         chrono->secondes += 1;
         if(chrono->secondes == 60){
@@ -42,7 +46,7 @@ int addSecondChrono(chronometre * chrono){
 }
 
 int saveGame(char * saveName, int ** gameBoard, int n, int * score, chronometre * chrono){
-    // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargé par la fonction loadGame().
+    // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargée par la fonction loadGame().
 
     strcat(saveName, ".txt"); // On ajoute l'extension .txt au nom de la sauvegarde.
 
@@ -82,7 +86,7 @@ int saveGame(char * saveName, int ** gameBoard, int n, int * score, chronometre 
         }
     }
 
-    fclose(file); // Fermeture du fichier texte.
+    fclose(file);
 
     return 0;
 }
@@ -97,20 +101,14 @@ int loadGame(char * saveName, int ** gameBoard, int n, int * score, chronometre 
         return 10;
     }
 
-    char * c = malloc(sizeof(char)); // Création de la variable c qui contiendra le caractère lu.
-    char * buffer = malloc(10*sizeof(char)); // Création d'un buffer qui contiendra la ligne lue.
+    char c; // Création de la variable c qui contiendra le caractère lu.
+    char buffer[10]; // Création d'un buffer qui contiendra la ligne lue.
     int i, j, line, x , y;
     line = i = x = y = 0;
-    /*
-    La boucle traite chaque caractère du fichier un par un.
-    Elle ajoute chaque caractère lu au buffer.
-    Lorsque le caractère \n est rencontré:
-        Si c'est la première ligne qui est traitée alors la valeur est affectée au score.
-        Si c'est un autre ligne, la valeur est affectée à la case du gameBoard correspondante.
-        Enfin, on reinitialise le buffer pour traiter la ligne suivante.
-    */
-    while(fread(c, sizeof(char), 1, file) != 0){
-        if(*c == '\n'){
+    
+    // Récupération des données dans le fichier texte et mise à jour des données de la partie.
+    while(fread(&c, sizeof(char), 1, file) != 0){
+        if(c == '\n'){
             if(line == 0){
                 *score = atoi(buffer);
             }else if(line == 1){
@@ -131,20 +129,16 @@ int loadGame(char * saveName, int ** gameBoard, int n, int * score, chronometre 
                 buffer[j] = '\0';
             }
         }else{
-            buffer[i] = *c;
+            buffer[i] = c;
             i++;
         }
     }
-
-    // On libère l'espace alloué par les malloc.
-    free(c);
-    free(buffer);
 
     return 0;
 }
 
 int ** create2DTab(int x, int y){
-    // Cette fonction créé un tableau à 2 dimension de taille x lignes et y colonnes.
+    // Cette fonction créé un tableau à 2 dimensions de x lignes et y colonnes et initialise les cases à 0;
 
     int ** tab = malloc(sizeof(int *)*x);
     if(tab==NULL){return NULL;}
@@ -182,7 +176,7 @@ int free2DTab(int ** tab, int n){
 }
 
 int displayGameBoard(int ** gameBoard, int n){
-    // Cette fonction affiche le gameBoard du jeu.
+    // Cette fonction affiche le gameBoard dans le terminal.
 
     int x, y;
     printf("_____________________\n");
@@ -215,11 +209,10 @@ int displayGameBoard(int ** gameBoard, int n){
 }
 
 int countFreeBoxGameBoard(int ** gameBoard, int n){
-    // Cette fonction compte le nombre de case vide restante sur le gameBoard et renvoie la réponse.
+    // Cette fonction compte le nombre de cases vides restantes sur le gameBoard et renvoie la réponse.
 
     int x, y, countFreeBox;
     countFreeBox = 0;
-    // La boucle traite le gameBoard case par case et chaque case vide trouvée ajoute 1 à countFreeBox.
     for(x=0; x<n; x++){
         for(y=0; y<n; y++){
             if(gameBoard[x][y]==0){
@@ -228,7 +221,6 @@ int countFreeBoxGameBoard(int ** gameBoard, int n){
         }
     }
 
-    // On renvoie finalement la variable countFreeBox.
     return countFreeBox;
 }
 
@@ -236,9 +228,9 @@ int fillInRandomBox(int ** gameBoard, int n, int choice){
     // Cette fonction affecte à une case vide aléatoire du gameBoard soit 2 soit 4 (ou seulement 2 selon le paramètre "choice" donné).
 
     int countFreeBox = countFreeBoxGameBoard(gameBoard, n);
-    if(countFreeBox==0){ return 10; } // On teste si le gameBoard est déjà complet ou non. Si il l'est on renvoie le code d'erreur 10.
+    if(countFreeBox==0){ return 10; } // Si le plateau de jeu est complet, il retourne le code 10.
 
-    // On créé un tableau qui contiendra les coordonnées x et y de toute les cases vide du gameBoard.
+    // Le tableau coordTab contiendra les coordonnées x et y de toutes les cases vides du gameBoard.
     int ** coordTab = create2DTab(countFreeBox, 2);
     if(coordTab == NULL){ return -1; }
 
@@ -275,9 +267,7 @@ int fillInRandomBox(int ** gameBoard, int n, int choice){
         return -1;
     }
 
-    // On libère le tableau des coordonnées créé.
     free2DTab(coordTab, countFreeBox);
-
     return 0;
 }
 
@@ -506,29 +496,22 @@ int downMove(int ** gameBoard, int n, int * score, int * win){
 }
 
 int continuationOfTheGame(int ** gameBoard, int n){
-    // Cette fonction teste si le jeu peut continuer lorsque le plateau est plein
+    // Cette fonction teste si le joueur peut encore jouer.
 
-    // On teste si il reste des cases vides. Si oui, on retourne la valeur 1 qui signifie que le joueur peut encore jouer.
     if(countFreeBoxGameBoard(gameBoard, n) > 0){
+        // S'il reste des cases vides, le joueur peut encore jouer.
         return 1;
     }else{
-        // On teste chaque case du gameBoard une par une.
         int x, y;
         for(x=0; x<n; x++){
             for(y=0; y<n; y++){
-                /*
-                Pour toute les cases sauf celle de la dernière ligne on teste si la case du dessous est la même:
-                    Si oui, on retourne la valeur 1 qui signifie que le joueur peut encore jouer.
-                */
+                // Test d'égalité verticale.
                 if(x!=(n-1)){
                     if(gameBoard[x][y] == gameBoard[x+1][y]){
                         return 1;
                     }
                 }
-                /*
-                Pour toute les cases sauf celle de la dernière colonne on teste si la case de droite est la même:
-                    Si oui, on retourne la valeur 1 qui signifie que le joueur peut encore jouer.
-                */
+                // Test d'égalité horizontale
                 if(y!=(n-1)){
                     if(gameBoard[x][y] == gameBoard[x][y+1]){
                         return 1;
@@ -538,10 +521,12 @@ int continuationOfTheGame(int ** gameBoard, int n){
         }
     }
 
-    return 0; // On retourne 0 si aucune case adjacente n'est identique. Le joueur ne peux plus jouer.
+    return 0; // On retourne 0 si aucune case adjacente n'est identique : le joueur ne peux plus jouer.
 }
 
 int displaySDLWinWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
+    // Cette fonction affiche le pop up de victoire de la partie.
+
     // Ajout d'une fenêtre translucide par dessus le gameBoard
     SDL_Surface * winWindowBackground = NULL;
     winWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
@@ -551,99 +536,104 @@ int displaySDLWinWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * aria
         return -1;
     }
     SDL_FillRect(winWindowBackground,NULL,SDL_MapRGB(winWindowBackground->format,255,255,0));
-    SDL_Rect positionWinWindowBackground;
-    positionWinWindowBackground.x=25;
-    positionWinWindowBackground.y=100;
-    SDL_BlitSurface(winWindowBackground,NULL,ecran,&positionWinWindowBackground);
+    SDL_Rect posWinWindowBackground;
+    posWinWindowBackground.x=25;
+    posWinWindowBackground.y=100;
+    SDL_BlitSurface(winWindowBackground,NULL,ecran,&posWinWindowBackground);
     SDL_FreeSurface(winWindowBackground);
 
+    // Initialisation de la couleur des textes
+    SDL_Color colorTextWinWindow= {255, 255, 255};
+
     // Ajout du texte "Partie gagnée!"
-    SDL_Color colorTexte= {255, 255, 255};
-    SDL_Surface * Texte = TTF_RenderText_Blended(arialBold35, "Partie gagnee!", colorTexte);
-    if(Texte==NULL){
+    SDL_Surface * winWindowText1 = TTF_RenderText_Blended(arialBold35, "Partie gagnee!", colorTextWinWindow);
+    if(winWindowText1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte;
-    positionTexte.x=131;
-    positionTexte.y=280;
-    SDL_BlitSurface(Texte,NULL,ecran,&positionTexte);
-    SDL_FreeSurface(Texte);
+    SDL_Rect posWinWindowText1;
+    posWinWindowText1.x=131;
+    posWinWindowText1.y=280;
+    SDL_BlitSurface(winWindowText1,NULL,ecran,&posWinWindowText1);
+    SDL_FreeSurface(winWindowText1);
 
     // Ajout du texte "Appuyez sur Q pour quitter le jeu"
-    SDL_Color colorTexte2= {255, 255, 255};
-    SDL_Surface * Texte2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTexte2);
-    if(Texte2==NULL){
+    SDL_Surface * winWindowText2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTextWinWindow);
+    if(winWindowText2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte2;
-    positionTexte2.x=100;
-    positionTexte2.y=340;
-    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
-    SDL_FreeSurface(Texte2);
+    SDL_Rect posWinWindowText2;
+    posWinWindowText2.x=100;
+    posWinWindowText2.y=340;
+    SDL_BlitSurface(winWindowText2,NULL,ecran,&posWinWindowText2);
+    SDL_FreeSurface(winWindowText2);
 
     SDL_Flip(ecran);
     return 0;
 }
 
 int displaySDLGameOverWindow(SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
+    // Cette fonction affiche le pop up de defaite de la partie.
+
     // Ajout d'une fenêtre translucide par dessus le gameBoard
-    SDL_Surface * winWindowBackground = NULL;
-    winWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
-    SDL_SetAlpha(winWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
-    if(winWindowBackground == NULL){
+    SDL_Surface * gameOverWindowBackground = NULL;
+    gameOverWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+    SDL_SetAlpha(gameOverWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
+    if(gameOverWindowBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
         return -1;
     }
-    SDL_FillRect(winWindowBackground,NULL,SDL_MapRGB(winWindowBackground->format,255,0,0));
-    SDL_Rect positionWinWindowBackground;
-    positionWinWindowBackground.x=25;
-    positionWinWindowBackground.y=100;
-    SDL_BlitSurface(winWindowBackground,NULL,ecran,&positionWinWindowBackground);
-    SDL_FreeSurface(winWindowBackground);
+    SDL_FillRect(gameOverWindowBackground,NULL,SDL_MapRGB(gameOverWindowBackground->format,255,0,0));
+    SDL_Rect posGameOverWindowBackground;
+    posGameOverWindowBackground.x=25;
+    posGameOverWindowBackground.y=100;
+    SDL_BlitSurface(gameOverWindowBackground,NULL,ecran,&posGameOverWindowBackground);
+    SDL_FreeSurface(gameOverWindowBackground);
+
+    // Initialisation de la couleur des textes
+    SDL_Color colorTextGameOverWindow= {255, 255, 255};
 
     // Ajout du texte "Partie perdue!"
-    SDL_Color colorTexte= {255, 255, 255};
-    SDL_Surface * Texte = TTF_RenderText_Blended(arialBold35, "Partie perdue!", colorTexte);
-    if(Texte==NULL){
+    SDL_Surface * gameOverWindowText1 = TTF_RenderText_Blended(arialBold35, "Partie perdue!", colorTextGameOverWindow);
+    if(gameOverWindowText1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte;
-    positionTexte.x=131;
-    positionTexte.y=280;
-    SDL_BlitSurface(Texte,NULL,ecran,&positionTexte);
-    SDL_FreeSurface(Texte);
+    SDL_Rect posGameOverWindowText1;
+    posGameOverWindowText1.x=131;
+    posGameOverWindowText1.y=280;
+    SDL_BlitSurface(gameOverWindowText1,NULL,ecran,&posGameOverWindowText1);
+    SDL_FreeSurface(gameOverWindowText1);
 
     // Ajout du texte "Appuyez sur Q pour quitter le jeu"
-    SDL_Color colorTexte2= {255, 255, 255};
-    SDL_Surface * Texte2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTexte2);
-    if(Texte2==NULL){
+    SDL_Surface * gameOverWindowText2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTextGameOverWindow);
+    if(gameOverWindowText2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte2;
-    positionTexte2.x=100;
-    positionTexte2.y=340;
-    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
-    SDL_FreeSurface(Texte2);
+    SDL_Rect posGameOverWindowText2;
+    posGameOverWindowText2.x=100;
+    posGameOverWindowText2.y=340;
+    SDL_BlitSurface(gameOverWindowText2,NULL,ecran,&posGameOverWindowText2);
+    SDL_FreeSurface(gameOverWindowText2);
 
     SDL_Flip(ecran);
     return 0;
 }
 
 int winGame(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
-    // Cette fonction est appelée quand la partie est gagnée.
+    // Cette fonction déclenche les évènements de victoire de la partie.
 
-    *play = 0; // Stop la partie
+    *play = 0;
     printf("Félicitation! Vous avez gagné la partie!\n");
-    printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
+    printf("Vous avez obtenu un score de %i points.\n", score);
 
     if(displaySDLWinWindow(ecran, arial20, arialBold35)==-1){
         return -1;
     }
 
+    // Si l'utilisateur appuis sur "q", on quitte le jeu.
     int cont = 1;
     SDL_Event event;
     while(cont){
@@ -670,16 +660,17 @@ int winGame(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF_
 }
 
 int gameOver(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
-    // Cette fonction est appelée quand la partie est perdue.
+    // Cette fonction déclenche les évènements de defaite de la partie.
 
-    *play = 0; // Stop la partie
+    *play = 0;
     printf("Game over! Le jeu n'est plus possible.\n");
-    printf("Vous avez obtenu un score de %i points.\n", score); // Affichage du score
+    printf("Vous avez obtenu un score de %i points.\n", score);
 
     if(displaySDLGameOverWindow(ecran, arial20, arialBold35)==-1){
         return -1;
     }
 
+    // Si l'utilisateur appuis sur "q", on quitte le jeu.
     int cont = 1;
     SDL_Event event;
     while(cont){
@@ -706,9 +697,11 @@ int gameOver(int * play, int score, SDL_Surface * ecran, TTF_Font * arial20, TTF
 }
 
 int testWinOrGameOver(int win, int * play, int score, int ** gameBoard, int n, SDL_Surface * ecran, TTF_Font * arial20, TTF_Font * arialBold35){
+    // Cette fonction teste si la partie est gagnée ou perdu ou aucun des deux. 
+
     /*
     Si "win" vaut 1 alors la partie est gagnée.
-    Sinon, on teste s'il reste des cases vides sur le gameBoard. Si non, on regarde s'il est possible de continuer le jeu. Si non, game over.
+    Sinon et que le jeu n'est plus possible alors on appelle la fonction GameOver.
     */
     if(win){
         if(winGame(play, score, ecran, arial20, arialBold35)==-1){
@@ -723,53 +716,9 @@ int testWinOrGameOver(int win, int * play, int score, int ** gameBoard, int n, S
     return 0;
 }
 
-int initGameboard(int ** gameBoard, int n){
-    // Initialisation du plateau de jeu pour le début de la partie
-
-    if(fillInRandomBox(gameBoard, n, 2) != 0){ return -1; } // Le paramètre 2 signifie ici que les cases ajoutées seront forcément de valeur 2.
-    if(fillInRandomBox(gameBoard, n, 2) != 0){ return -1; }
-
-    /*
-    // Code permettant de tester la situation de victoire.
-    gameBoard[0][0] = 1024;
-    gameBoard[0][1] = 1024;
-    */
-
-    /*
-    // Code permettant de tester la situation de défaite.
-    int x, y, i;
-    i=0;
-    for(x=0;x<n;x++){
-        for(y=0;y<n;y++){
-            gameBoard[x][y] = i;
-            i++;
-        }
-    }
-    */
-
-    return 0;
-}
-
-SDL_Surface * initSDLWindow(){
-    //création de la surface principale
-    SDL_Surface * ecran = NULL ;
-    if((ecran = SDL_SetVideoMode(WIDTH,HEIGHT,32, SDL_HWSURFACE))==NULL){
-        fprintf(stderr,"Erreur VideoMode %s\n",SDL_GetError());
-        return NULL;
-    }
-
-    // Légende de la fenêtre
-    SDL_WM_SetCaption("2048",NULL);
-
-    //Remplissage de la fenêtre
-    SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
-
-    SDL_Flip(ecran);
-
-    return ecran;
-}
-
 int initSDLScreenGame(SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial14){
+    // Cette fonction initialise la fenêtre SDL avec les éléments necessaires à l'affichage du jeu.
+
     // Suppression de tout les éléments de la fenêtre
     SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
 
@@ -781,10 +730,10 @@ int initSDLScreenGame(SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial1
         return -1;
     }
     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
-    SDL_Rect positionScoreBackground;
-    positionScoreBackground.x=25;
-    positionScoreBackground.y=25;
-    SDL_BlitSurface(scoreBackground,NULL,ecran,&positionScoreBackground);
+    SDL_Rect posScoreBackground;
+    posScoreBackground.x=25;
+    posScoreBackground.y=25;
+    SDL_BlitSurface(scoreBackground,NULL,ecran,&posScoreBackground);
     SDL_FreeSurface(scoreBackground);
 
     // Ajout du fond du chronomètre
@@ -795,13 +744,13 @@ int initSDLScreenGame(SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial1
         return -1;
     }
     SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
-    SDL_Rect positionChronoBackground;
-    positionChronoBackground.x=350;
-    positionChronoBackground.y=25;
-    SDL_BlitSurface(chronoBackground,NULL,ecran,&positionChronoBackground);
+    SDL_Rect posChronoBackground;
+    posChronoBackground.x=350;
+    posChronoBackground.y=25;
+    SDL_BlitSurface(chronoBackground,NULL,ecran,&posChronoBackground);
     SDL_FreeSurface(chronoBackground);
 
-    // Ajout du fond du gameBoard
+    // Ajout du fond du GameBoard
     SDL_Surface * gameBoardBackground = NULL;
     gameBoardBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
     if(gameBoardBackground == NULL){
@@ -809,55 +758,59 @@ int initSDLScreenGame(SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial1
         return -1;
     }
     SDL_FillRect(gameBoardBackground,NULL,SDL_MapRGB(gameBoardBackground->format,105,91,69));
-    SDL_Rect positionGameBoardBackground;
-    positionGameBoardBackground.x=25;
-    positionGameBoardBackground.y=100;
-    SDL_BlitSurface(gameBoardBackground,NULL,ecran,&positionGameBoardBackground);
+    SDL_Rect posGameBoardBackground;
+    posGameBoardBackground.x=25;
+    posGameBoardBackground.y=100;
+    SDL_BlitSurface(gameBoardBackground,NULL,ecran,&posGameBoardBackground);
     SDL_FreeSurface(gameBoardBackground);
 
     // Ajout des indications de commande
-    SDL_Color colorTexte= {50,50,50};
+    // Initialisation de la couleur des textes d'indications
+    SDL_Color colorTextIndications= {50,50,50};
+
     // Affichage du texte "Utilisez les flèches directionnelles pour déplacer les cases."
-    SDL_Surface * Texte1 = TTF_RenderText_Blended(arial14, "Utilisez les fleches directionnelles pour deplacer les cases.", colorTexte);
-    if(Texte1==NULL){
+    SDL_Surface * textIndications1 = TTF_RenderText_Blended(arial14, "Utilisez les fleches directionnelles pour deplacer les cases.", colorTextIndications);
+    if(textIndications1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte1;
-    positionTexte1.x=35;
-    positionTexte1.y=565;
-    SDL_BlitSurface(Texte1,NULL,ecran,&positionTexte1);
-    SDL_FreeSurface(Texte1);
+    SDL_Rect posTextIndications1;
+    posTextIndications1.x=35;
+    posTextIndications1.y=565;
+    SDL_BlitSurface(textIndications1,NULL,ecran,&posTextIndications1);
+    SDL_FreeSurface(textIndications1);
 
     // Affichage du texte "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter."
-    SDL_Surface * Texte2 = TTF_RenderText_Blended(arial14, "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter.", colorTexte);
-    if(Texte2==NULL){
+    SDL_Surface * textIndications2 = TTF_RenderText_Blended(arial14, "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter.", colorTextIndications);
+    if(textIndications2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte2;
-    positionTexte2.x=35;
-    positionTexte2.y=590;
-    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
-    SDL_FreeSurface(Texte2);
+    SDL_Rect posTextIndications2;
+    posTextIndications2.x=35;
+    posTextIndications2.y=590;
+    SDL_BlitSurface(textIndications2,NULL,ecran,&posTextIndications2);
+    SDL_FreeSurface(textIndications2);
 
     // Affichage du texte "Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal."
-    SDL_Surface * Texte3 = TTF_RenderText_Blended(arial12, "Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal.", colorTexte);
-    if(Texte3==NULL){
+    SDL_Surface * textIndications3 = TTF_RenderText_Blended(arial12, "Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal.", colorTextIndications);
+    if(textIndications3==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte3;
-    positionTexte3.x=45;
-    positionTexte3.y=610;
-    SDL_BlitSurface(Texte3,NULL,ecran,&positionTexte3);
-    SDL_FreeSurface(Texte3);
+    SDL_Rect posTextIndications3;
+    posTextIndications3.x=45;
+    posTextIndications3.y=610;
+    SDL_BlitSurface(textIndications3,NULL,ecran,&posTextIndications3);
+    SDL_FreeSurface(textIndications3);
 
     SDL_Flip(ecran);
     return 0;
 }
 
 int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score, TTF_Font * police){
+    // Cette fonction met à jours l'affichage du score et l'affichage du plateau de jeu sur la fenêtre SDL.
+
     // Mise à jour du score
     // Suppression de l'ancien score
     SDL_Surface * scoreBackground = NULL;
@@ -867,26 +820,26 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
         return -1;
     }
     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
-    SDL_Rect positionScoreBackground;
-    positionScoreBackground.x=25;
-    positionScoreBackground.y=25;
-    SDL_BlitSurface(scoreBackground,NULL,ecran,&positionScoreBackground);
+    SDL_Rect posScoreBackground;
+    posScoreBackground.x=25;
+    posScoreBackground.y=25;
+    SDL_BlitSurface(scoreBackground,NULL,ecran,&posScoreBackground);
     SDL_FreeSurface(scoreBackground);
     
     // Affichage du score actuel
-    SDL_Color colorScore= {255,255,255};
+    SDL_Color colorTextScore= {255,255,255};
     char string[6];
     sprintf(string, "%d", score);
-    SDL_Surface * Texte = TTF_RenderText_Blended(police, string, colorScore);
-    if(Texte==NULL){
+    SDL_Surface * textScore = TTF_RenderText_Blended(police, string, colorTextScore);
+    if(textScore==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positonScore;
-    positonScore.x=35;
-    positonScore.y=40;
-    SDL_BlitSurface(Texte,NULL,ecran,&positonScore);
-    SDL_FreeSurface(Texte);
+    SDL_Rect posTextScore;
+    posTextScore.x=35;
+    posTextScore.y=40;
+    SDL_BlitSurface(textScore,NULL,ecran,&posTextScore);
+    SDL_FreeSurface(textScore);
 
 
     // Mise à jour du gameBoard
@@ -906,29 +859,33 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
                 x+=110;
             }
 
-            //Ajout case selon les coordonnées
+            //Ajout d'une case selon les coordonnées calculées
             SDL_Surface * caseGameBoard = NULL;
             caseGameBoard = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
             if(caseGameBoard == NULL){
                 fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
                 return -1;
             }
-            SDL_Rect positionCase;
-            positionCase.x=x;
-            positionCase.y=y;
+            SDL_Rect posCase;
+            posCase.x=x;
+            posCase.y=y;
 
+            // Initialisation de la couleur des textes des cases
             SDL_Color colorTextCase = {255,255,255};
 
+            // On assigne une couleur à la case selon sa valeur.
             if(gameBoard[caseY][caseX]==0){
                 // Case vide
                 SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 166, 151, 128));
             }else if(gameBoard[caseY][caseX]==2){
                 SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 238, 228, 218));
+                // Modification de la couleur du texte pour qu'il soit lisible
                 colorTextCase.r = 75;
                 colorTextCase.g = 75;
                 colorTextCase.b = 75;
             }else if(gameBoard[caseY][caseX]==4){
                 SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 236, 224, 199));
+                // Modification de la couleur du texte pour qu'il soit lisible
                 colorTextCase.r = 75;
                 colorTextCase.g = 75;
                 colorTextCase.b = 75;
@@ -951,33 +908,34 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
             }else if(gameBoard[caseY][caseX]==2048){
                 SDL_FillRect(caseGameBoard,NULL,SDL_MapRGB(caseGameBoard->format, 231, 191, 67));
             }
-            SDL_BlitSurface(caseGameBoard,NULL,ecran,&positionCase);
+            SDL_BlitSurface(caseGameBoard,NULL,ecran,&posCase);
             SDL_FreeSurface(caseGameBoard);
 
-            // Ajout du nombre dans la case si necessaire
+            // Ajout du nombre dans la case si elle n'est pas vide.
             if(gameBoard[caseY][caseX]!=0){
                 char string[6];
                 sprintf(string, "%d", gameBoard[caseY][caseX]);
-                SDL_Surface * Texte = TTF_RenderText_Blended(police, string, colorTextCase);
-                if(Texte==NULL){
+                SDL_Surface * textCase = TTF_RenderText_Blended(police, string, colorTextCase);
+                if(textCase==NULL){
                     fprintf(stderr,"erreur: %s",TTF_GetError());
                     return -1;
                 }
-                SDL_Rect positionTextCase;
+                // Calcul de la position du nombre selon sa longueur.
+                SDL_Rect posTextCase;
                 if(gameBoard[caseY][caseX]<10){
-                    positionTextCase.x=x+45;
+                    posTextCase.x=x+45;
                 }else if(gameBoard[caseY][caseX]<100){
-                    positionTextCase.x=x+38;
+                    posTextCase.x=x+38;
                 }else if(gameBoard[caseY][caseX]<1000){
-                    positionTextCase.x=x+32;
+                    posTextCase.x=x+32;
                 }else if(gameBoard[caseY][caseX]<10000){
-                    positionTextCase.x=x+27;
+                    posTextCase.x=x+27;
                 }else{
-                    positionTextCase.x=x+23;
+                    posTextCase.x=x+23;
                 }
-                positionTextCase.y=y+40;
-                SDL_BlitSurface(Texte,NULL,ecran,&positionTextCase);
-                SDL_FreeSurface(Texte);
+                posTextCase.y=y+40;
+                SDL_BlitSurface(textCase,NULL,ecran,&posTextCase);
+                SDL_FreeSurface(textCase);
             }
         }
     }
@@ -987,6 +945,8 @@ int refreshSDLScreenGame(SDL_Surface * ecran, int ** gameBoard, int n, int score
 }
 
 int refreshSDLChrono(SDL_Surface * ecran, chronometre * chrono, TTF_Font * police){
+    // Cette fonction met à jours l'affichage du chronomètre sur la fenêtre SDL.
+
     // Suppression du chronomètre affiché précédemment
     SDL_Surface * chronoBackground = NULL;
     chronoBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
@@ -995,14 +955,14 @@ int refreshSDLChrono(SDL_Surface * ecran, chronometre * chrono, TTF_Font * polic
         return -1;
     }
     SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
-    SDL_Rect positionChronoBackground;
-    positionChronoBackground.x=350;
-    positionChronoBackground.y=25;
-    SDL_BlitSurface(chronoBackground,NULL,ecran,&positionChronoBackground);
+    SDL_Rect posChronoBackground;
+    posChronoBackground.x=350;
+    posChronoBackground.y=25;
+    SDL_BlitSurface(chronoBackground,NULL,ecran,&posChronoBackground);
     SDL_FreeSurface(chronoBackground);
 
     // Affichage du score actuel
-    SDL_Color colorChrono= {255,255,255};
+    SDL_Color colorTextChrono= {255,255,255};
     char strSecondes[3];
     char strTime[10];
     if(chrono->secondes<10){
@@ -1013,73 +973,80 @@ int refreshSDLChrono(SDL_Surface * ecran, chronometre * chrono, TTF_Font * polic
     sprintf(strTime, "%d", chrono->minutes);
     strcat(strTime, ":");
     strcat(strTime, strSecondes);
-    SDL_Surface * Texte = TTF_RenderText_Blended(police, strTime, colorChrono);
-    if(Texte==NULL){
+    SDL_Surface * textChrono = TTF_RenderText_Blended(police, strTime, colorTextChrono);
+    if(textChrono==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionChrono;
-    positionChrono.x=360;
-    positionChrono.y=40;
-    SDL_BlitSurface(Texte,NULL,ecran,&positionChrono);
-    SDL_FreeSurface(Texte);
+    SDL_Rect posTextChrono;
+    posTextChrono.x=360;
+    posTextChrono.y=40;
+    SDL_BlitSurface(textChrono,NULL,ecran,&posTextChrono);
+    SDL_FreeSurface(textChrono);
 
     SDL_Flip(ecran);
     return 0;
 }
 
-int displaySDLQuitWindow(SDL_Surface * ecran, TTF_Font * police){
+int displaySDLQuitPopUp(SDL_Surface * ecran, TTF_Font * police){
+    // Cette fonction affiche la pop up pour quitter la partie.
+
     // Ajout du fond de la fenêtre
-    SDL_Surface * quitWindowBackground = NULL;
-    quitWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 375,150, 32,0,0,0,0);
-    if(quitWindowBackground == NULL){
+    SDL_Surface * quitPopUpBackground = NULL;
+    quitPopUpBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 375,150, 32,0,0,0,0);
+    if(quitPopUpBackground == NULL){
         fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
         return -1;
     }
-    SDL_FillRect(quitWindowBackground,NULL,SDL_MapRGB(quitWindowBackground->format,66,58,44));
-    SDL_Rect positionQuitWindowBackground;
-    positionQuitWindowBackground.x=62;
-    positionQuitWindowBackground.y=250;
-    SDL_BlitSurface(quitWindowBackground,NULL,ecran,&positionQuitWindowBackground);
-    SDL_FreeSurface(quitWindowBackground);
+    SDL_FillRect(quitPopUpBackground,NULL,SDL_MapRGB(quitPopUpBackground->format,66,58,44));
+    SDL_Rect posQuitPopUpBackground;
+    posQuitPopUpBackground.x=62;
+    posQuitPopUpBackground.y=250;
+    SDL_BlitSurface(quitPopUpBackground,NULL,ecran,&posQuitPopUpBackground);
+    SDL_FreeSurface(quitPopUpBackground);
 
-    SDL_Flip(ecran);
+    // Initialisation de la couleur des textes de la pop up
+    SDL_Color colorTextQuitPopUp = {255, 255, 255};
 
     // Ajout du texte "Voulez-vous vraiment quitter?"
-    SDL_Color colorTexte = {255, 255, 255};
-    SDL_Surface * Texte = TTF_RenderText_Blended(police, "Voulez-vous vraiment quitter?", colorTexte);
-    if(Texte==NULL){
+    SDL_Surface * textQuitPopUp1 = TTF_RenderText_Blended(police, "Voulez-vous vraiment quitter?", colorTextQuitPopUp);
+    if(textQuitPopUp1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte;
-    positionTexte.x=117;
-    positionTexte.y=280;
-    SDL_BlitSurface(Texte,NULL,ecran,&positionTexte);
-    SDL_FreeSurface(Texte);
+    SDL_Rect posTextQuitPopUp1;
+    posTextQuitPopUp1.x=117;
+    posTextQuitPopUp1.y=280;
+    SDL_BlitSurface(textQuitPopUp1,NULL,ecran,&posTextQuitPopUp1);
+    SDL_FreeSurface(textQuitPopUp1);
 
     // Ajout du texte "Appuyez sur Y pour oui ou N pour non."
-    SDL_Color colorTexte2 = {255, 255, 255};
-    SDL_Surface * Texte2 = TTF_RenderText_Blended(police, "Appuyez sur Y pour oui ou N pour non.", colorTexte2);
-    if(Texte2==NULL){
+    SDL_Surface * textQuitPopUp2 = TTF_RenderText_Blended(police, "Appuyez sur Y pour oui ou N pour non.", colorTextQuitPopUp);
+    if(textQuitPopUp2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         return -1;
     }
-    SDL_Rect positionTexte2;
-    positionTexte2.x=75;
-    positionTexte2.y=330;
-    SDL_BlitSurface(Texte2,NULL,ecran,&positionTexte2);
-    SDL_FreeSurface(Texte2);
+    SDL_Rect posTextQuitPopUp2;
+    posTextQuitPopUp2.x=75;
+    posTextQuitPopUp2.y=330;
+    SDL_BlitSurface(textQuitPopUp2,NULL,ecran,&posTextQuitPopUp2);
+    SDL_FreeSurface(textQuitPopUp2);
 
+
+    SDL_Flip(ecran);
     return 0;
 }
 
-int quitParty(int * play, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial14, TTF_Font * arial20){
-    if(displaySDLQuitWindow(ecran, arial20)){
+int quitGame(int * play, SDL_Surface * ecran, TTF_Font * arial20){
+    // Cette fonction déclenche les évènement permettant de quitter la partie.
+
+    if(displaySDLQuitPopUp(ecran, arial20)){
         return -1;
     }
     printf("Voulez-vous veaiment quitter la partie? Y/N\n");
     
+    // Si l'utilisateur appuis sur "Y" on quitte le jeu,
+    // S'il appuis sur "N" on enlève la pop up pour quitter le jeu et la partie reprend.
     int cont = 1;
     SDL_Event event;
     while(cont){
@@ -1088,9 +1055,6 @@ int quitParty(int * play, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * ar
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym){
                     case 'n':
-                        if(initSDLScreenGame(ecran, arial12, arial14)==-1){
-                            return -1;
-                        }
                         cont = 0;
                         return 1;
                         break;
@@ -1115,19 +1079,17 @@ int quitParty(int * play, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * ar
 }
 
 int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial14, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
-    // Cette fonction lance la partie.
+    // Cette fonction lance la partie puis gère les évènements et appelle les fonctions necessaires au déroulement du jeu.
 
-    int win = 0; // On initialise la varibale win à 0. Elle sera passée à 1 si le jeu est gagné.
+    int win = 0; // On initialise la variable win à 0. Elle sera passée à 1 si le jeu est gagné.
 
     if(initSDLScreenGame(ecran, arial12, arial14)==-1){
         return -1;
     }
 
-    // On affiche le gameBoard et le score dans le terminale
     displayGameBoard(gameBoard, n);
     printf("Score: %i\n", *score);
 
-    // On affiche le gameBoard sur la fenêtre graphique SDL
     if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
         return -1;
     }
@@ -1147,24 +1109,22 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                 case SDL_KEYUP:
                     switch(event.key.keysym.sym){
                         case SDLK_UP:
+                            // Mouvement vers le haut
                             upMove(gameBoard, n, score, &win);
-                            // On ajoute une case de valeur 2 ou 4 à la place d'une case vide aléatoire du gameBoard. Si une erreur se produit on retourne -1.
                             if(fillInRandomBox(gameBoard, n, 4) == -1){
                                 return -1;
                             }
-                            // On affiche le gameBoard et le score dans le terminale
                             displayGameBoard(gameBoard, n);
                             printf("Score: %i\n", *score);
-                            // On affiche le gameBoard sur la fenêtre graphique SDL
                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
                                 return -1;
                             }
-                            // On test si la partie est gagnée ou perdu ou si elle doit continuer.
                             if(testWinOrGameOver(win,play,*score,gameBoard,n,ecran,arial20,arialBold35)==-1){
                                 return -1;
                             }
                             break;
                         case SDLK_DOWN:
+                            // Mouvement vers le bas
                             downMove(gameBoard, n, score, &win);
                             if(fillInRandomBox(gameBoard, n, 4) == -1){
                                 return -1;
@@ -1179,6 +1139,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                             }
                             break;
                         case SDLK_RIGHT:
+                            // Mouvement vers la droite
                             rightMove(gameBoard, n, score, &win);
                             if(fillInRandomBox(gameBoard, n, 4) == -1){
                                 return -1;
@@ -1193,6 +1154,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                             }
                             break;
                         case SDLK_LEFT:
+                            //  Mouvement vers la gauche
                             leftMove(gameBoard, n, score, &win);
                             if(fillInRandomBox(gameBoard, n, 4) == -1){
                                 return -1;
@@ -1220,16 +1182,20 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
                             break;
                         case 'q':
                             stopChrono(chrono);
-                            if((q = quitParty(play, ecran, arial12, arial14, arial20))==1){
+                            if((q = quitGame(play, ecran, arial20))==1){
+                                // Le joueur veut continuer la partie
+                                if(initSDLScreenGame(ecran, arial12, arial14)==-1){
+                                    return -1;
+                                }
                                 displayGameBoard(gameBoard, n);
                                 printf("Score: %i\n", *score);
                                 if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
                                     return -1;
                                 }
+                                startChrono(chrono);
                             }else if(q==-1){
                                 return -1;
                             }
-                            startChrono(chrono);
                             break;
                         default:
                             *play=1;
@@ -1243,6 +1209,7 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
             }
         }
 
+        // Ajout d'une seconde au chronomètre si necessaire
         timeEnd = time(NULL);
         if(difftime(timeEnd, timeStart)>0){
             addSecondChrono(chrono);
@@ -1252,6 +1219,55 @@ int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ec
     }
 
     return 0;
+}
+
+int initGameboard(int ** gameBoard, int n){
+    // Cette fonction initialise le plateau de jeu avec 2 cases de valeur 2 à des coordonnées aléatoires à l'aide de la fonction fillInRandomBox().
+
+    if(fillInRandomBox(gameBoard, n, 2) != 0){ return -1; } // Le paramètre 2 signifie ici que les cases ajoutées seront forcément de valeur 2.
+    if(fillInRandomBox(gameBoard, n, 2) != 0){ return -1; }
+
+    /*
+    // Code permettant de tester la situation de victoire.
+    gameBoard[0][0] = 1024;
+    gameBoard[0][1] = 1024;
+    */
+
+    /*
+    // Code permettant de tester la situation de défaite.
+    int x, y, i;
+    i=0;
+    for(x=0;x<n;x++){
+        for(y=0;y<n;y++){
+            gameBoard[x][y] = i;
+            i++;
+        }
+    }
+    */
+
+    return 0;
+}
+
+SDL_Surface * initSDLWindow(){
+    /* Cette fonction initialise la fenêtre d'affichage SDL et renvoie un pointeur vers celle-ci. */
+
+    // Création de la surface principale
+    SDL_Surface * ecran = NULL ;
+    if((ecran = SDL_SetVideoMode(WIDTH,HEIGHT,32, SDL_HWSURFACE))==NULL){
+        fprintf(stderr,"Erreur VideoMode %s\n",SDL_GetError());
+        return NULL;
+    }
+
+    // Légende de la fenêtre
+    SDL_WM_SetCaption("2048",NULL);
+
+    // Remplissage de la fenêtre
+    SDL_FillRect(ecran,NULL,SDL_MapRGB(ecran->format, 247,217,166));
+
+    // Mise à jour de la fenêtre
+    SDL_Flip(ecran);
+
+    return ecran;
 }
 
 int main(int argc, char ** argv) {
@@ -1268,7 +1284,7 @@ int main(int argc, char ** argv) {
         exit(EXIT_FAILURE);
     }
 
-    // Chargement de la police de texte
+    // Chargement des polices de texte
     TTF_Font * arial20 = NULL ;
     arial20 = TTF_OpenFont("fonts/Arial.ttf",20);
     if(arial20==NULL){
@@ -1308,7 +1324,7 @@ int main(int argc, char ** argv) {
     int n = 4; // Taille du plateau de jeu.
     //(On stock cette valeur dans une variable pour plus de clarté étant donnée qu'elle sera réutilisée souvent dans le code)
 
-    // On créé le plateau de jeu que l'on nommera gameBoard.
+    // On initialise le plateau de jeu que l'on nomme gameBoard.
     int ** gameBoard = create2DTab(n, n);
     if(gameBoard == NULL){
         TTF_Quit(); // On quitte SDL_TTF
@@ -1318,74 +1334,79 @@ int main(int argc, char ** argv) {
 
     int score = 0; // Initialisation de la variable de score.
 
+    // Initialisation de la fenêtre du jeu.
     SDL_Surface * ecran = initSDLWindow();
     if(ecran == NULL){
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE); 
     }
 
-    SDL_Color colorTexte= {135, 101, 0};
+    // Initialisation de la couleur des textes du menu
+    SDL_Color colorTextMenu = {135, 101, 0};
 
-    SDL_Surface * text1 = TTF_RenderText_Blended(arial20, "Appuyez sur N pour demarrer une nouvelle partie!", colorTexte);
-    if(text1==NULL){
+    // Ajout des textes du menu sur la fenêtre
+    SDL_Surface * menuText1 = TTF_RenderText_Blended(arial20, "Appuyez sur N pour demarrer une nouvelle partie!", colorTextMenu);
+    if(menuText1==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE);
     }
-    SDL_Rect positionText1;
-    positionText1.x=27;
-    positionText1.y=250;
-    SDL_BlitSurface(text1,NULL,ecran,&positionText1);
-    SDL_FreeSurface(text1);
+    SDL_Rect posMenuText1;
+    posMenuText1.x=27;
+    posMenuText1.y=250;
+    SDL_BlitSurface(menuText1,NULL,ecran,&posMenuText1);
+    SDL_FreeSurface(menuText1);
 
-    SDL_Surface * text2 = TTF_RenderText_Blended(arial20, "OU", colorTexte);
-    if(text2==NULL){
+    SDL_Surface * menuText2 = TTF_RenderText_Blended(arial20, "OU", colorTextMenu);
+    if(menuText2==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE);
     }
-    SDL_Rect positionText2;
-    positionText2.x=233;
-    positionText2.y=302;
-    SDL_BlitSurface(text2,NULL,ecran,&positionText2);
-    SDL_FreeSurface(text2);
+    SDL_Rect posMenuText2;
+    posMenuText2.x=233;
+    posMenuText2.y=302;
+    SDL_BlitSurface(menuText2,NULL,ecran,&posMenuText2);
+    SDL_FreeSurface(menuText2);
 
-    SDL_Surface * text3 = TTF_RenderText_Blended(arial20, "Appuyez sur L pour charger une partie enregistree!", colorTexte);
-    if(text3==NULL){
+    SDL_Surface * menuText3 = TTF_RenderText_Blended(arial20, "Appuyez sur L pour charger une partie enregistree!", colorTextMenu);
+    if(menuText3==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE);
     }
-    SDL_Rect positionText3;
-    positionText3.x=22;
-    positionText3.y=350;
-    SDL_BlitSurface(text3,NULL,ecran,&positionText3);
-    SDL_FreeSurface(text3);
+    SDL_Rect posMenuText3;
+    posMenuText3.x=22;
+    posMenuText3.y=350;
+    SDL_BlitSurface(menuText3,NULL,ecran,&posMenuText3);
+    SDL_FreeSurface(menuText3);
 
-    SDL_Surface * text4 = TTF_RenderText_Blended(arial12, "puis saisissez le nom de la sauvegarde dans le terminal.", colorTexte);
-    if(text4==NULL){
+    SDL_Surface * menuText4 = TTF_RenderText_Blended(arial12, "puis saisissez le nom de la sauvegarde dans le terminal.", colorTextMenu);
+    if(menuText4==NULL){
         fprintf(stderr,"erreur: %s",TTF_GetError());
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE);
     }
-    SDL_Rect positionText4;
-    positionText4.x=22;
-    positionText4.y=377;
-    SDL_BlitSurface(text4,NULL,ecran,&positionText4);
-    SDL_FreeSurface(text4);
+    SDL_Rect posMenuText4;
+    posMenuText4.x=22;
+    posMenuText4.y=377;
+    SDL_BlitSurface(menuText4,NULL,ecran,&posMenuText4);
+    SDL_FreeSurface(menuText4);
 
+    // Actualisation de la fenêtre
     SDL_Flip(ecran);
 
+    // Attente et traitement des évènements
     char choice;
     int cont = 1;
     SDL_Event event;
@@ -1409,8 +1430,8 @@ int main(int argc, char ** argv) {
             case SDL_QUIT:
                 cont = 0;
                 free2DTab(gameBoard, n);
-                TTF_Quit(); // On quitte SDL_TTF
-                SDL_Quit(); // On quitte SDL
+                TTF_Quit();
+                SDL_Quit();
                 exit(EXIT_SUCCESS);
                 break;
             default:
@@ -1423,19 +1444,16 @@ int main(int argc, char ** argv) {
     resetChrono(&chrono);
 
     if(choice == 'n'){
-        /*
-        Si l'utilisateur entre 'n':
-            On appelle la fonction "initGameboard". Si la fonction échoue, on libère l'espace alloué au plateau de jeu et retourne -1 pour mettre fin au programme.
-        */
+        // Si l'utilisateur a entré 'n', on appelle la fonction "initGameboard".
         if(initGameboard(gameBoard, n) == -1){
             printf("Erreur lors de l'initialisation du plateau de jeu.\n");
             free2DTab(gameBoard, n);
-            TTF_Quit(); // On quitte SDL_TTF
-            SDL_Quit(); // On quitte SDL
+            TTF_Quit();
+            SDL_Quit();
             exit(EXIT_FAILURE);
         }
     }else if(choice == 'l'){
-        // Si l'utilisateur entre 'l':
+        // Si l'utilisateur a entré 'l'...
 
         // On demande à l'utilisateur le nom de la sauvegarde qu'il souhaite charger.
         char saveName[24] = "";
@@ -1444,38 +1462,38 @@ int main(int argc, char ** argv) {
 
         strcat(saveName, ".txt"); // On ajoute l'xtension ".txt" à la fin du nom
 
-        int r = loadGame(saveName, gameBoard, n, &score, &chrono); // On appelle la fonction "loadGame" et on affecte la valeur retournée par la fonction à r
-
-        // On traite la valeur retournée par loadGame
-        if(r == 10){
-            // Si la valeur est 10 alors le nom saisie par l'utilisateur n'est pas correct. On libère l'espace alloué au plateau de jeu et retourne O pour mettre fin au programme.
+        // On traite la valeur retournée par loadGame.
+        int r;
+        if((r=(loadGame(saveName, gameBoard, n, &score, &chrono))) == 10){
+            // Si la valeur est 10 alors le nom saisie par l'utilisateur n'est pas correct. On libère l'espace alloué au programme et on quitte.
             printf("Aucune sauvegarde pour le nom saisi.\n");
             free2DTab(gameBoard, n);
-            TTF_Quit(); // On quitte SDL_TTF
-            SDL_Quit(); // On quitte SDL
+            TTF_Quit();
+            SDL_Quit();
             exit(EXIT_SUCCESS);
         }else if(r == -1){
-            // Si la valeur est -A alors une erreur s'est produite. On libère l'espace alloué au plateau de jeu et retourne O pour mettre fin au programme.
+            // Si la valeur est -1 alors une erreur s'est produite. On libère l'espace alloué au programme et on quitte.
             printf("Erreur lors du chargement de la partie.\n");
             free2DTab(gameBoard, n);
-            TTF_Quit(); // On quitte SDL_TTF
-            SDL_Quit(); // On quitte SDL
+            TTF_Quit();
+            SDL_Quit();
             exit(EXIT_FAILURE);
         }
     }
 
     // On initialise la variable "play" à 1 et on appelle startGame pour lancer la partie.
-    // Si une erreur se produit pendant la partie, on libère l'espace alloué au plateau de jeu et retourne -1 pour mettre fin au programme.
+    // Si une erreur se produit pendant la partie, on libère l'espace alloué au programme et on quitte.
     int play = 1;
     if(startGame(gameBoard, n, &play, &score, ecran, arial12, arial14, arial20, arialBold35, &chrono) == -1){
         free2DTab(gameBoard, n);
-        TTF_Quit(); // On quitte SDL_TTF
-        SDL_Quit(); // On quitte SDL
+        TTF_Quit();
+        SDL_Quit();
         exit(EXIT_FAILURE);
     }
 
-    free2DTab(gameBoard, n); // On libère l'espace alloué pour le plateau de jeu.
-    TTF_Quit(); // On quitte SDL_TTF
-    SDL_Quit(); // On quitte SDL
-    return EXIT_SUCCESS;
+    // On libère l'espace alloué au programme et on quitte.
+    free2DTab(gameBoard, n);
+    TTF_Quit();
+    SDL_Quit();
+    exit(EXIT_SUCCESS);
 }
