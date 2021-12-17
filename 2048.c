@@ -10,7 +10,7 @@
 
 typedef struct chronometre chronometre;
 struct chronometre{
-    int active, minutes, secondes;
+    unsigned int active, minutes, secondes;
 };
 
 int startChrono(chronometre * chrono){
@@ -45,7 +45,7 @@ int addSecondChrono(chronometre * chrono){
     return 0;
 }
 
-int saveGame(char * saveName, int ** gameBoard, int n, int * score, chronometre * chrono){
+int saveGame(char * saveName, int ** gameBoard, int n, unsigned int * score, chronometre * chrono){
     // Cette fonction permet de sauvegarder les données de la partie actuelle dans un fichier texte. La partie pourra ensuite être chargée par la fonction loadGame().
 
     strcat(saveName, ".txt"); // On ajoute l'extension .txt au nom de la sauvegarde.
@@ -91,7 +91,7 @@ int saveGame(char * saveName, int ** gameBoard, int n, int * score, chronometre 
     return 0;
 }
 
-int loadGame(char * saveName, int ** gameBoard, int n, int * score, chronometre * chrono){
+int loadGame(char * saveName, int ** gameBoard, int n, unsigned int * score, chronometre * chrono){
     // Cette fonction permet de charger une partie à partir d'un fichier de sauvegarde créé à l'aide de la fonction saveGame().
 
     // Ouverture du fichier de sauvegarde.
@@ -271,7 +271,7 @@ int fillInRandomBox(int ** gameBoard, int n, int choice){
     return 0;
 }
 
-int rightMove(int ** gameBoard, int n, int * score, int * win){
+int rightMove(int ** gameBoard, int n, unsigned int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers la droite en effectuant la fusion des cases adjacentes horizontalement de même valeur.
 
     // On traite le gameBoard ligne par ligne.
@@ -327,7 +327,7 @@ int rightMove(int ** gameBoard, int n, int * score, int * win){
     return 0;
 }
 
-int leftMove(int ** gameBoard, int n, int * score, int * win){
+int leftMove(int ** gameBoard, int n, unsigned int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers la gauche en effectuant la fusion des cases adjacentes horizontalement de même valeur.
 
     // On traite le gameBoard ligne par ligne.
@@ -383,7 +383,7 @@ int leftMove(int ** gameBoard, int n, int * score, int * win){
     return 0;
 }
 
-int upMove(int ** gameBoard, int n, int * score, int * win){
+int upMove(int ** gameBoard, int n, unsigned int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers le haut en effectuant la fusion des cases adjacentes verticalements de même valeur.
 
     // On traite le gameBoard colonne par colonne.
@@ -439,7 +439,7 @@ int upMove(int ** gameBoard, int n, int * score, int * win){
     return 0;
 }
 
-int downMove(int ** gameBoard, int n, int * score, int * win){
+int downMove(int ** gameBoard, int n, unsigned int * score, int * win){
     // Cette fonction déplace toutes les cases du gameBoard vers le haut en effectuant la fusion des cases adjacentes verticalements de même valeur.
 
     // On traite le gameBoard colonne par colonne.
@@ -1078,7 +1078,7 @@ int quitGame(int * play, SDL_Surface * ecran, TTF_Font * arial20){
     return 0;
 }
 
-int startGame(int ** gameBoard, int n, int * play, int * score, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial14, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
+int startGame(int ** gameBoard, int n, int * play, unsigned int * score, SDL_Surface * ecran, TTF_Font * arial12, TTF_Font * arial14, TTF_Font * arial20, TTF_Font * arialBold35, chronometre * chrono){
     // Cette fonction lance la partie puis gère les évènements et appelle les fonctions necessaires au déroulement du jeu.
 
     int win = 0; // On initialise la variable win à 0. Elle sera passée à 1 si le jeu est gagné.
@@ -1332,7 +1332,11 @@ int main(int argc, char ** argv) {
         exit(EXIT_FAILURE);
     }
 
-    int score = 0; // Initialisation de la variable de score.
+    // Initialisation du chronomètre
+    struct chronometre chrono;
+    resetChrono(&chrono);
+
+    unsigned int score = 0; // Initialisation de la variable de score.
 
     // Initialisation de la fenêtre du jeu.
     SDL_Surface * ecran = initSDLWindow();
@@ -1438,10 +1442,6 @@ int main(int argc, char ** argv) {
                 cont = 1;
         }
     }
-
-    // Initialisation du chronomètre
-    struct chronometre chrono;
-    resetChrono(&chrono);
 
     if(choice == 'n'){
         // Si l'utilisateur a entré 'n', on appelle la fonction "initGameboard".
